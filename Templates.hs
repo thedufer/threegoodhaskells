@@ -3,9 +3,10 @@ module Templates (homepage) where
 import Lucid
 import Data.Text
 import qualified Data.Text.Lazy as TL
+import Models
 
-homepage :: TL.Text
-homepage = renderText $ html_ $ do
+homepage :: Maybe User -> TL.Text
+homepage u = renderText $ html_ $ do
   head_ $ do
     script_ [src_ "//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"] ("" :: Text)
     link_ [rel_ "stylesheet", href_ "http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"]

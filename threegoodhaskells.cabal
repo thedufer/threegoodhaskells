@@ -64,6 +64,8 @@ executable threegoodhaskells
                      , scotty
                      , lucid
                      , text
+                     , wai
+                     , postgresql-simple
 
   default-extensions: OverloadedStrings
   

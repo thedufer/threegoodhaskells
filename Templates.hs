@@ -2,8 +2,9 @@ module Templates (homepage) where
 
 import Lucid
 import Data.Text
+import qualified Data.Text.Lazy as TL
 
--- homepage :: Data.Text.Internal.Lazy.Text
+homepage :: TL.Text
 homepage = renderText $ html_ $ do
   head_ $ do
     script_ [src_ "//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"] ("" :: Text)

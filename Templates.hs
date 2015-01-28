@@ -5,7 +5,7 @@ import Data.Text
 import qualified Data.Text.Lazy as TL
 import Models
 
-homepage :: Maybe User -> TL.Text
+homepage :: Maybe Member -> TL.Text
 homepage u = renderText $ html_ $ do
   head_ $ do
     script_ [src_ "//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"] ("" :: Text)

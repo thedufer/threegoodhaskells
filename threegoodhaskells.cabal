@@ -66,6 +66,7 @@ executable threegoodhaskells
                      , text
                      , wai
                      , postgresql-simple
+                     , cookie
 
   default-extensions: OverloadedStrings
   

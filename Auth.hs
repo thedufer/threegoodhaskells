@@ -8,6 +8,7 @@ import Web.Cookie (CookiesText, parseCookiesText)
 import Database.PostgreSQL.Simple
 import Network.Wai
 import Data.List (find)
+import Data.Maybe (listToMaybe)
 
 doubleBind :: (Monad m) => (a -> m (Maybe b)) -> Maybe a -> m (Maybe b)
 doubleBind f Nothing = return Nothing
@@ -34,8 +35,14 @@ tokenCookieToMTokenTuple tc = case (Data.Text.splitOn "-" tc) of
 reqToMStringTokenTuple :: Request -> Maybe (Data.Text.Text, Data.Text.Text)
 reqToMStringTokenTuple = (tokenCookieToMTokenTuple =<<) . cookiesToMTokenCookie . reqToCookies
 
-stringTokenTupleToTokenTuple :: (Data.Text.Text, Data.Text.Text) -> (MemberId, String)
-stringTokenTupleToTokenTuple (a, b) = (read $ Data.Text.unpack a, Data.Text.unpack b)
+maybeRead :: Read a => String -> Maybe a
+maybeRead = (liftM fst) . listToMaybe . reads
+
+stringTokenTupleToMTokenTuple :: (Data.Text.Text, Data.Text.Text) -> Maybe (MemberId, String)
+stringTokenTupleToMTokenTuple (a, b) = do
+  id <- maybeRead $ Data.Text.unpack a
+  token <- return $ Data.Text.unpack b
+  return (id, token)
 
 reqToMTokenTuple :: Request -> Maybe (MemberId, String)
-reqToMTokenTuple = (liftM stringTokenTupleToTokenTuple) . reqToMStringTokenTuple
+reqToMTokenTuple = (stringTokenTupleToMTokenTuple =<<) . reqToMStringTokenTuple

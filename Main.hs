@@ -2,7 +2,6 @@ import Web.Scotty
 import Network.Wai
 import Database.PostgreSQL.Simple (connectPostgreSQL)
 import Control.Monad.Trans (liftIO)
-import Data.Monoid (mconcat)
 
 import qualified Templates
 import qualified Auth
@@ -21,8 +20,8 @@ main = do
     get "/" $ do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req
-      html $ Templates.homepage mMember
-      showToHtml $ Auth.reqToMTokenTuple req
-    get "/:word" $ do
-      beam <- param "word"
-      html $ mconcat ["<h1>Scotty, ", beam, " me up!</h1>"]
+      html $ Templates.home mMember
+    get "/login" $ do
+      req <- request
+      mMember <- liftIO $ Auth.loadSession conn req
+      html $ Templates.login Nothing

@@ -68,6 +68,7 @@ executable threegoodhaskells
                      , postgresql-simple
                      , cookie
                      , mtl
+                     , mailgun
 
   default-extensions: OverloadedStrings
                     , FlexibleContexts

@@ -7,6 +7,8 @@ import Control.Monad (liftM, void)
 import Data.Maybe (listToMaybe)
 import Database.PostgreSQL.Simple.Time
 
+import Time (currentSendTime, sendTimeToNextEmailDate)
+
 {- Wherein we document our tables:
  -
  - Members
@@ -43,9 +45,15 @@ import Database.PostgreSQL.Simple.Time
  -   updatedAt - timestamp (unused and not updated since switch to haskell)
  -}
 
-insertMember :: Connection -> Member -> IO ()
+insertMember :: Connection -> Member -> IO (Maybe Member)
 insertMember conn (Member id email unsubscribed sendTime nextEmailDate) =
-  void $ execute conn "INSERT INTO Members (id, email, unsubscribed, sendTime, nextEmailDate) VALUES (?, ?, ?, ?, ?);" (id, email, unsubscribed, sendTime, nextEmailDate)
+  (liftM rowsToMMember) $ query conn "INSERT INTO Members (email, unsubscribed, sendTime, nextEmailDate) VALUES (?, ?, ?, ?, ?);" (email, unsubscribed, sendTime, nextEmailDate)
+
+newMember :: Connection -> Email -> IO (Maybe Member)
+newMember conn email = do
+  sendTime <- currentSendTime
+  nextEmailDate <- sendTimeToNextEmailDate sendTime
+  insertMember conn (Member (-1) email False sendTime (Finite nextEmailDate))
 
 rowToToken :: (TokenId, String, MemberId) -> Token
 rowToToken (id, token, idMember) = Token id token idMember

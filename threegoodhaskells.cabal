@@ -69,6 +69,7 @@ executable threegoodhaskells
                      , cookie
                      , mtl
                      , mailgun
+                     , time
 
   default-extensions: OverloadedStrings
                     , FlexibleContexts

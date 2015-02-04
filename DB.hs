@@ -46,14 +46,14 @@ import Time (currentSendTime, sendTimeToNextEmailDate)
  -}
 
 insertMember :: Connection -> Member -> IO (Maybe Member)
-insertMember conn (Member id email unsubscribed sendTime nextEmailDate) =
+insertMember conn (Member _ email unsubscribed sendTime nextEmailDate) =
   (liftM rowsToMMember) $ query conn "INSERT INTO Members (email, unsubscribed, sendTime, nextEmailDate) VALUES (?, ?, ?, ?, ?);" (email, unsubscribed, sendTime, nextEmailDate)
 
 newMember :: Connection -> Email -> IO (Maybe Member)
 newMember conn email = do
   sendTime <- currentSendTime
   nextEmailDate <- sendTimeToNextEmailDate sendTime
-  insertMember conn (Member (-1) email False sendTime (Finite nextEmailDate))
+  insertMember conn (Member undefined email False sendTime (Finite nextEmailDate))
 
 rowToToken :: (TokenId, String, MemberId) -> Token
 rowToToken (id, token, idMember) = Token id token idMember

@@ -8,6 +8,7 @@ import qualified Templates
 import qualified Auth
 import qualified Models
 import qualified DB
+import qualified Mail
 
 import Data.List (find)
 import qualified Data.Text.Lazy as L

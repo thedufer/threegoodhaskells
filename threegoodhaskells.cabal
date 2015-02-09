@@ -71,6 +71,7 @@ executable threegoodhaskells
                      , mailgun
                      , time
                      , bytestring
+                     , http-conduit
 
   default-extensions: OverloadedStrings
                     , FlexibleContexts

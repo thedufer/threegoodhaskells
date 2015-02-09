@@ -30,7 +30,13 @@ main = do
     get "/login" $ do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req
-      html $ Templates.login Nothing
+      case mMember of
+        Nothing -> html $ Templates.login Nothing
+        Just member -> redirect "/"
+    get "/signup" $ do
+      req <- request
+      ps <- params
+      html $ Templates.signup $ (liftM L.unpack) $ getParam "err" ps
     post "/signup" $ do
       req <- request
       ps <- params
@@ -38,4 +44,6 @@ main = do
         Nothing -> redirect "/"
         Just email -> do
           mMember <- liftIO $ DB.newMember conn (L.unpack email)
-          html $ Templates.home mMember
+          case mMember of
+            Nothing -> redirect "/signup?err=inuse"
+            Just member -> redirect "/"

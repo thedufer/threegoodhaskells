@@ -1,10 +1,24 @@
-module Templates (home, login) where
+module Templates (home, login, signup) where
 
 import Lucid
 import Data.Text
 import Data.String
 import qualified Data.Text.Lazy as TL
 import Models
+
+signupErrMap :: Maybe String -> Html ()
+signupErrMap (Just "inuse") = p_ [class_ "text-danger"] "That email address is already in use."
+signupErrMap _ = ""
+
+signup :: Maybe String -> TL.Text
+signup mStr = renderText $ html_ $ do
+  Templates.head
+  body_ $ do
+    div_ [class_ "container"] $ do
+      Templates.header [loginLink False]
+      h3_ "Sign Up"
+      signupErrMap mStr
+      signupForm
 
 login :: Maybe String -> TL.Text
 login mStr = renderText $ html_ $ do
@@ -16,6 +30,7 @@ login mStr = renderText $ html_ $ do
       form_ [action_ "login", method_ "post"] $ do
         div_ [style_ "display: inline-block;"] $ do
           input_ [type_ "email", placeholder_ "Email Address", name_ "email", class_ "form-control"]
+        " "
         input_ [type_ "submit", value_ "Log In", class_ "btn btn-success"]
 
 loginLink :: Bool -> Html ()
@@ -53,6 +68,13 @@ head = head_ $ do
     "  border-bottom: 1px solid #e5e5e5;",
     "}" ])
 
+signupForm :: Html ()
+signupForm = form_ [action_ "signup", method_ "post"] $ do
+  div_ [style_ "display: inline-block;"] $ do
+    input_ [type_ "email", placeholder_ "Email Address", name_ "email", class_ "form-control"]
+  " "
+  input_ [type_ "submit", value_ "Sign Up", class_ "btn btn-success"]
+
 home :: Maybe Member -> TL.Text
 home u = renderText $ html_ $ do
   Templates.head
@@ -68,7 +90,4 @@ home u = renderText $ html_ $ do
         p_ [class_ "col-xs-4"] "2. Reply with three good things about your day"
         p_ [class_ "col-xs-4"] "3. You get a collection of daily reflections"
         p_ [class_ "col-xs-12", style_ "padding-top: 12px;"] "All we need is your email address:"
-        form_ [action_ "signup", method_ "post"] $ do
-          div_ [style_ "display: inline-block;"] $ do
-            input_ [type_ "email", placeholder_ "Email Address", name_ "email", class_ "form-control"]
-          input_ [type_ "submit", value_ "Sign Up", class_ "btn btn-success"]
+        signupForm

@@ -2,16 +2,22 @@ import Web.Scotty
 import Network.Wai
 import Database.PostgreSQL.Simple (connectPostgreSQL)
 import Control.Monad.Trans (liftIO)
+import qualified Data.ByteString.Char8 as C8
 
 import qualified Templates
 import qualified Auth
 import qualified Models
 import qualified DB
 
+import Data.List (find)
 import qualified Data.Text.Lazy as L
+import Control.Monad (liftM)
 
 showToHtml :: Show a => a -> ActionM ()
 showToHtml = html . L.pack . show
+
+getParam :: L.Text -> [Param] -> Maybe L.Text
+getParam t = (liftM snd) . find (\x -> (fst x) == t)
 
 main :: IO ()
 main = do
@@ -25,3 +31,11 @@ main = do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req
       html $ Templates.login Nothing
+    post "/signup" $ do
+      req <- request
+      ps <- params
+      case (getParam "email" ps) of
+        Nothing -> redirect "/"
+        Just email -> do
+          mMember <- liftIO $ DB.newMember conn (L.unpack email)
+          html $ Templates.home mMember

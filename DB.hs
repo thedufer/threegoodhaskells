@@ -7,6 +7,8 @@ import Control.Monad (liftM, void)
 import Data.Maybe (listToMaybe)
 import Database.PostgreSQL.Simple.Time
 
+import Data.Time.Clock
+
 import Time (currentSendTime, sendTimeToNextEmailDate)
 
 {- Wherein we document our tables:
@@ -46,8 +48,9 @@ import Time (currentSendTime, sendTimeToNextEmailDate)
  -}
 
 insertMember :: Connection -> Member -> IO (Maybe Member)
-insertMember conn (Member _ email unsubscribed sendTime nextEmailDate) =
-  (liftM rowsToMMember) $ query conn "INSERT INTO Members (email, unsubscribed, sendTime, nextEmailDate) VALUES (?, ?, ?, ?, ?);" (email, unsubscribed, sendTime, nextEmailDate)
+insertMember conn (Member _ email unsubscribed sendTime nextEmailDate) = do
+  curTime <- getCurrentTime
+  (liftM rowsToMMember) $ query conn "INSERT INTO \"Members\" (email, unsubscribed, \"sendTime\", \"nextEmailDate\", \"createdAt\", \"updatedAt\") VALUES (?, ?, ?, ?, ?, ?) RETURNING id, email, unsubscribed, \"sendTime\", \"nextEmailDate\";" (email, unsubscribed, sendTime, nextEmailDate, curTime, curTime)
 
 newMember :: Connection -> Email -> IO (Maybe Member)
 newMember conn email = do
@@ -63,7 +66,7 @@ rowsToMToken = (liftM rowToToken) . listToMaybe
 
 idTokenToMToken :: Connection -> MemberId -> String -> IO (Maybe Token)
 idTokenToMToken conn id token = do
-  xs <- query conn "SELECT (id, token, MemberId) FROM Tokens WHERE token = ? AND MemberId = ?;" (token, id)
+  xs <- query conn "SELECT (id, token, \"MemberId\") FROM Tokens WHERE token = ? AND MemberId = ?;" (token, id)
   return (rowsToMToken xs)
 
 rowToMember :: (MemberId, Email, Bool, SendTime, UTCTimestamp) -> Member
@@ -74,5 +77,5 @@ rowsToMMember = (liftM rowToMember) . listToMaybe
 
 idToMMember :: Connection -> MemberId -> IO (Maybe Member)
 idToMMember conn id = do
-  xs <- query conn "SELECT (id, email, unsubscribed, sendTime, nextEmailDate) FROM Members WHERE id = ?;" (Only id)
+  xs <- query conn "SELECT (id, email, unsubscribed, \"sendTime\", \"nextEmailDate\") FROM Members WHERE id = ?;" (Only id)
   return (rowsToMMember xs)

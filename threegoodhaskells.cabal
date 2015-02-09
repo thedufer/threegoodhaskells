@@ -70,6 +70,7 @@ executable threegoodhaskells
                      , mtl
                      , mailgun
                      , time
+                     , bytestring
 
   default-extensions: OverloadedStrings
                     , FlexibleContexts

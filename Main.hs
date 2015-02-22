@@ -7,7 +7,7 @@ import qualified Data.ByteString.Char8 as C8
 import qualified Templates.Pages as Pages
 import qualified Auth
 import qualified Models
-import qualified DB
+import qualified DB.Member
 import qualified Mail
 
 import Data.List (find)
@@ -44,7 +44,7 @@ main = do
       case (getParam "email" ps) of
         Nothing -> redirect "/"
         Just email -> do
-          mMember <- liftIO $ DB.newMember conn (L.unpack email)
+          mMember <- liftIO $ DB.Member.newMember conn (L.unpack email)
           case mMember of
             Nothing -> redirect "/signup?err=inuse"
             Just member -> do

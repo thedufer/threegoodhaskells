@@ -1,7 +1,10 @@
 module Auth (loadSession, makeLoginCode) where
 
 import Models
-import DB
+import DB.Member
+import DB.LoginCode
+import DB.Token
+
 import qualified Data.Text
 import Control.Monad (liftM, replicateM)
 import Web.Cookie (CookiesText, parseCookiesText)

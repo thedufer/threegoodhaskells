@@ -47,6 +47,11 @@ import Time (currentSendTime, sendTimeToNextEmailDate)
  -   updatedAt - timestamp (unused and not updated since switch to haskell)
  -}
 
+insertLoginCode :: Connection -> LoginCode -> IO (Maybe LoginCode)
+insertLoginCode conn (LoginCode _ code expiration memberId) = do
+  curTime <- getCurrentTime
+  (liftM rowsToMLoginCode) $ query conn "INSERT INTO \"LoginCodes\" (code, expires, \"MemberId\", \"createdAt\", \"updatedAt\") VALUES (?, ?, ?, ?, ?) RETURNING id, code, expires, \"MemberId\"" (code, expiration, memberId, curTime, curTime)
+
 insertMember :: Connection -> Member -> IO (Maybe Member)
 insertMember conn (Member _ email unsubscribed sendTime nextEmailDate) = do
   curTime <- getCurrentTime
@@ -63,6 +68,12 @@ rowToToken (id, token, idMember) = Token id token idMember
 
 rowsToMToken :: [(TokenId, String, MemberId)] -> Maybe Token
 rowsToMToken = (liftM rowToToken) . listToMaybe
+
+rowToLoginCode :: (LoginCodeId, Code, UTCTimestamp, MemberId) -> LoginCode
+rowToLoginCode (id, code, expires, idMember) = LoginCode id code expires idMember
+
+rowsToMLoginCode :: [(LoginCodeId, Code, UTCTimestamp, MemberId)] -> Maybe LoginCode
+rowsToMLoginCode = (liftM rowToLoginCode) . listToMaybe
 
 idTokenToMToken :: Connection -> MemberId -> String -> IO (Maybe Token)
 idTokenToMToken conn id token = do

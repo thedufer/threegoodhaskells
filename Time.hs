@@ -1,8 +1,15 @@
-module Time where
+module Time (currentSendTime, sendTimeToNextEmailDate, currentPostDate) where
 
 import Models
 import Database.PostgreSQL.Simple.Time
 import Data.Time.Clock (getCurrentTime, utctDayTime, addUTCTime, UTCTime)
+
+currentPostDate :: IO UTCTime
+currentPostDate = do
+  curTime <- getCurrentTime
+  curTimeAdj <- return $ addUTCTime (-60 * 60 * 24) curTime
+  time <- return $ (fromRational . toRational . negate . utctDayTime) curTimeAdj
+  return $ addUTCTime time curTimeAdj
 
 currentSendTime :: IO SendTime
 currentSendTime = do

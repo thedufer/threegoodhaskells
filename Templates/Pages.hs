@@ -1,4 +1,4 @@
-module Templates (home, login, signup) where
+module Templates.Pages (home, login, signup) where
 
 import Lucid
 import Data.Text
@@ -12,20 +12,20 @@ signupErrMap _ = ""
 
 signup :: Maybe String -> TL.Text
 signup mStr = renderText $ html_ $ do
-  Templates.head
+  Templates.Pages.head
   body_ $ do
     div_ [class_ "container"] $ do
-      Templates.header [loginLink False]
+      Templates.Pages.header [loginLink False]
       h3_ "Sign Up"
       signupErrMap mStr
       signupForm
 
 login :: Maybe String -> TL.Text
 login mStr = renderText $ html_ $ do
-  Templates.head
+  Templates.Pages.head
   body_ $ do
     div_ [class_ "container"] $ do
-      Templates.header [loginLink True]
+      Templates.Pages.header [loginLink True]
       h3_ "Log In"
       form_ [action_ "login", method_ "post"] $ do
         div_ [style_ "display: inline-block;"] $ do
@@ -77,10 +77,10 @@ signupForm = form_ [action_ "signup", method_ "post"] $ do
 
 home :: Maybe Member -> TL.Text
 home u = renderText $ html_ $ do
-  Templates.head
+  Templates.Pages.head
   body_ $ do
     div_ [class_ "container"] $ do
-      Templates.header [loginLink False]
+      Templates.Pages.header [loginLink False]
       div_ [class_ "jumbotron"] $ do
         h2_ [style_ "margin-top: -18px;"] "Reflect on the good things"
         br_ []

@@ -1,14 +1,18 @@
-module Auth where
+module Auth (loadSession, makeLoginCode) where
 
 import Models
 import DB
 import qualified Data.Text
-import Control.Monad (liftM)
+import Control.Monad (liftM, replicateM)
 import Web.Cookie (CookiesText, parseCookiesText)
 import Database.PostgreSQL.Simple
+import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
 import Network.Wai
 import Data.List (find)
 import Data.Maybe (listToMaybe)
+import Numeric (showHex)
+import Data.Time.Clock (getCurrentTime, addUTCTime)
+import System.Random (randomRIO)
 
 doubleBind :: (Monad m) => (a -> m (Maybe b)) -> Maybe a -> m (Maybe b)
 doubleBind f Nothing = return Nothing
@@ -46,3 +50,25 @@ stringTokenTupleToMTokenTuple (a, b) = do
 
 reqToMTokenTuple :: Request -> Maybe (MemberId, String)
 reqToMTokenTuple = (stringTokenTupleToMTokenTuple =<<) . reqToMStringTokenTuple
+
+_lPad0 :: Int -> String -> String
+_lPad0 k s
+  | length s < k = "0" ++ s
+  | otherwise    = s
+
+_generateCode8 :: IO String
+_generateCode8 = do
+  num <- randomRIO (0, 4294967295) :: IO Integer -- that's 16**8 - 1
+  return $ _lPad0 8 $ showHex num ""
+
+generateCode32 :: IO Code
+generateCode32 = do
+  arr <- replicateM 4 _generateCode8
+  return $ concat arr
+
+makeLoginCode :: Connection -> MemberId -> IO (Maybe LoginCode)
+makeLoginCode conn idMember = do
+  code <- generateCode32
+  curTime <- getCurrentTime
+  expiration <- return $ addUTCTime (60 * 60 * 24) curTime
+  insertLoginCode conn (LoginCode undefined code (Finite expiration) idMember)

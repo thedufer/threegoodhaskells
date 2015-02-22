@@ -4,7 +4,7 @@ import Database.PostgreSQL.Simple (connectPostgreSQL)
 import Control.Monad.Trans (liftIO)
 import qualified Data.ByteString.Char8 as C8
 
-import qualified Templates
+import qualified Templates.Pages as Pages
 import qualified Auth
 import qualified Models
 import qualified DB
@@ -27,17 +27,17 @@ main = do
     get "/" $ do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req
-      html $ Templates.home mMember
+      html $ Pages.home mMember
     get "/login" $ do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req
       case mMember of
-        Nothing -> html $ Templates.login Nothing
+        Nothing -> html $ Pages.login Nothing
         Just member -> redirect "/"
     get "/signup" $ do
       req <- request
       ps <- params
-      html $ Templates.signup $ (liftM L.unpack) $ getParam "err" ps
+      html $ Pages.signup $ (liftM L.unpack) $ getParam "err" ps
     post "/signup" $ do
       req <- request
       ps <- params
@@ -47,4 +47,6 @@ main = do
           mMember <- liftIO $ DB.newMember conn (L.unpack email)
           case mMember of
             Nothing -> redirect "/signup?err=inuse"
-            Just member -> redirect "/"
+            Just member -> do
+              Mail.sendFirstPostMail conn member idPost token day
+              redirect "/"

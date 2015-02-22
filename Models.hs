@@ -11,7 +11,7 @@ data Member = Member MemberId Email Bool SendTime UTCTimestamp deriving (Show)
 
 type LoginCodeId = Id
 type Code = String
-data LoginCode = LoginCode LoginCodeId UTCTimestamp MemberId deriving (Show)
+data LoginCode = LoginCode LoginCodeId Code UTCTimestamp MemberId deriving (Show)
 
 type TokenId = Id
 data Token = Token TokenId String MemberId deriving (Show)
@@ -26,7 +26,10 @@ memberToEmail :: Member -> Email
 memberToEmail (Member _ email _ _ _) = email
 
 loginCodeToMemberId :: LoginCode -> MemberId
-loginCodeToMemberId (LoginCode _ _ id) = id
+loginCodeToMemberId (LoginCode _ _ _ id) = id
+
+loginCodeToCode :: LoginCode -> Code
+loginCodeToCode (LoginCode _ code _ _) = code
 
 tokenToMemberId :: Token -> MemberId
 tokenToMemberId (Token _ _ id) = id

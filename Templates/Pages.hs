@@ -8,6 +8,7 @@ import Models
 
 signupErrMap :: Maybe String -> Html ()
 signupErrMap (Just "inuse") = p_ [class_ "text-danger"] "That email address is already in use."
+signupErrMap (Just "unknown") = p_ [class_ "text-danger"] "Something went terribly wrong.  Try again or shoot me an email."
 signupErrMap _ = ""
 
 signup :: Maybe String -> TL.Text

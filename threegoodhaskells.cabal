@@ -73,6 +73,7 @@ executable threegoodhaskells
                      , bytestring
                      , http-conduit
                      , random
+                     , old-locale
 
   default-extensions: OverloadedStrings
                     , FlexibleContexts

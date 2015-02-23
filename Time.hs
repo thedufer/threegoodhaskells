@@ -1,8 +1,15 @@
-module Time (currentSendTime, sendTimeToNextEmailDate, currentPostDate) where
+module Time (currentSendTime, sendTimeToNextEmailDate, currentPostDate, formatPostDate) where
 
 import Models
+
 import Database.PostgreSQL.Simple.Time
 import Data.Time.Clock (getCurrentTime, utctDayTime, addUTCTime, UTCTime)
+import System.Locale (defaultTimeLocale)
+import Data.Time.Format (formatTime)
+
+formatPostDate :: UTCTime -> String
+formatPostDate = formatTime defaultTimeLocale "%a %h %e %Y"
+-- "Sun Feb 22 2015"
 
 currentPostDate :: IO UTCTime
 currentPostDate = do

@@ -17,7 +17,8 @@ type TokenId = Id
 data Token = Token TokenId String MemberId deriving (Show)
 
 type PostId = Id
-data Post = Post PostId String UTCTimestamp String MemberId deriving (Show)
+type PostToken = String
+data Post = Post PostId (Maybe String) UTCTimestamp PostToken MemberId deriving (Show)
 
 memberToId :: Member -> MemberId
 memberToId (Member id _ _ _ _) = id

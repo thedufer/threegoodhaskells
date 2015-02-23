@@ -3,12 +3,15 @@ import Network.Wai
 import Database.PostgreSQL.Simple (connectPostgreSQL)
 import Control.Monad.Trans (liftIO)
 import qualified Data.ByteString.Char8 as C8
+import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
 
 import qualified Templates.Pages as Pages
 import qualified Auth
 import qualified Models
 import qualified DB.Member
+import qualified DB.Post
 import qualified Mail
+import qualified Time
 
 import Data.List (find)
 import qualified Data.Text.Lazy as L
@@ -48,5 +51,12 @@ main = do
           case mMember of
             Nothing -> redirect "/signup?err=inuse"
             Just member -> do
-              Mail.sendFirstPostMail conn member idPost token day
-              redirect "/"
+              mPost <- liftIO $ DB.Post.newPost conn member
+              case mPost of
+                Nothing -> redirect "/signup?err=unknown"
+                Just (Models.Post idPost _ uDate token _) ->
+                  case uDate of
+                    Finite date -> do
+                      liftIO $ Mail.sendFirstPostMail conn member idPost token (Time.formatPostDate date)
+                      redirect "/"
+                    _ -> redirect "/signup?err=unknown"

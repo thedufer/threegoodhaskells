@@ -68,12 +68,17 @@ executable threegoodhaskells
                      , postgresql-simple
                      , cookie
                      , mtl
-                     , mailgun
                      , time
                      , bytestring
                      , http-conduit
+                     , http-client
                      , random
                      , old-locale
+                     , mime-mail
+                     , exceptions
+                     , transformers
+                     , monad-control
+                     , mime-types
 
   default-extensions: OverloadedStrings
                     , FlexibleContexts

@@ -10,12 +10,13 @@ import Database.PostgreSQL.Simple (Connection)
 import Models
 import qualified Templates.Mail as TM
 import qualified Auth
+import qualified Settings
 
 sendMessage :: MG.Message -> IO (Response LBS.ByteString)
-sendMessage = MG.sendMessage "mg.aarondufour.com" "key-992d49a8db2fb111f82303ba962f3559"
+sendMessage = MG.sendMessage Settings.domain Settings.mailgunKey
 
 makeFromEmail :: PostId -> PostToken -> Text.Text
-makeFromEmail idPost token = Text.pack $ "Three Good Things <post+" ++ (show idPost) ++ "+" ++ token ++ "@threegoodthings.xyz>"
+makeFromEmail idPost token = Text.pack $ "Three Good Things <post+" ++ (show idPost) ++ "+" ++ token ++ "@" ++ Settings.domain ++ ">"
 
 sendFirstPostMail :: Connection -> Member -> PostId -> PostToken -> String -> IO (Response LBS.ByteString)
 sendFirstPostMail conn member idPost token day = do
@@ -35,7 +36,7 @@ sendFirstPostResponseMail :: Connection -> Member -> PostId -> PostToken -> Stri
 sendFirstPostResponseMail conn member idPost token oldSubject = do
   mLoginCode <- Auth.makeLoginCode conn (memberToId member)
   case mLoginCode of
-    Nothing -> fail "Failted to build a login code"
+    Nothing -> fail "Failed to build a login code"
     Just loginCode ->
       let from = makeFromEmail idPost token
           to = Text.pack $ memberToEmail member

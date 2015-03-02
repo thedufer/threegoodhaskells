@@ -4,6 +4,7 @@ import Lucid
 import Data.Text
 import Data.String
 import qualified Data.Text.Lazy as TL
+import qualified Settings
 import Models
 
 footer :: MemberId -> Code -> Html ()
@@ -11,9 +12,9 @@ footer idMember code = do
   br_ []
   br_ []
   br_ []
-  a_ [href_ $ pack ("https://threegoodthings.xyz/login-link?id=" ++ (show idMember) ++ "&code=" ++ code ++ "&redirect=/posts")] "Previous Posts"
+  a_ [href_ $ pack (Settings.fullDomain ++ "/login-link?id=" ++ (show idMember) ++ "&code=" ++ code ++ "&redirect=/posts")] "Previous Posts"
   " "
-  a_ [href_ $ pack ("https://threegoodthings.xyz/login-link?id=" ++ (show idMember) ++ "&code=" ++ code ++ "&redirect=/settings")] "Unsubscribe"
+  a_ [href_ $ pack (Settings.fullDomain ++ "/login-link?id=" ++ (show idMember) ++ "&code=" ++ code ++ "&redirect=/settings")] "Unsubscribe"
 
 firstPost :: MemberId -> Code -> TL.Text
 firstPost idMember code = renderText $ do
@@ -27,6 +28,6 @@ firstPostResponse idMember code = renderText $ do
   "Congrats on your writing your first entry!"
   br_ []
   "You can check it out "
-  a_ [href_ $ pack ("https://threegoodthings.xyz/login-link?id=" ++ (show idMember) ++ "&code=" ++ code ++ "&redirect=/posts")] "here"
+  a_ [href_ $ pack (Settings.fullDomain ++ "/login-link?id=" ++ (show idMember) ++ "&code=" ++ code ++ "&redirect=/posts")] "here"
   "."
   footer idMember code

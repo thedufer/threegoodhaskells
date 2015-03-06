@@ -1,4 +1,4 @@
-module Auth (loadSession, makeLoginCode) where
+module Auth (loadSession, makeLoginCode, makeToken, tokenToCookie) where
 
 import Models
 import DB.Member
@@ -15,6 +15,8 @@ import Network.Wai
 import Data.List (find)
 import Data.Maybe (listToMaybe)
 import Data.Time.Clock (getCurrentTime, addUTCTime)
+import Web.Scotty.Cookie (makeSimpleCookie)
+import Web.Cookie (SetCookie)
 
 doubleBind :: (Monad m) => (a -> m (Maybe b)) -> Maybe a -> m (Maybe b)
 doubleBind f Nothing = return Nothing
@@ -59,3 +61,11 @@ makeLoginCode conn idMember = do
   curTime <- getCurrentTime
   expiration <- return $ addUTCTime (60 * 60 * 24) curTime
   insertLoginCode conn (LoginCode undefined code (Finite expiration) idMember)
+
+makeToken :: Connection -> MemberId -> IO (Maybe Token)
+makeToken conn idMember = do
+  code <- RandomStrings.generateCode
+  insertToken conn (Token undefined code idMember)
+
+tokenToCookie :: Token -> SetCookie
+tokenToCookie (Token _ code idMember) = makeSimpleCookie "token" $ Data.Text.pack (show idMember ++ "-" ++ code)

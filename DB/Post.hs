@@ -18,7 +18,7 @@ rowsToMPost = (liftM rowToPost) . listToMaybe
 
 dateToPost :: Connection -> UTCTime -> IO (Maybe Post)
 dateToPost conn date =
-  (liftM rowsToMPost) $ query conn "SELECT (id, text, date, token, \"MemberId\") FROM \"Posts\" WHERE date = ?" (Only date)
+  (liftM rowsToMPost) $ query conn "SELECT id, text, date, token, \"MemberId\" FROM \"Posts\" WHERE date = ?" (Only date)
 
 insertPost :: Connection -> Post -> IO (Maybe Post)
 insertPost conn (Post _ text date token idMember) = do
@@ -37,7 +37,7 @@ newPost conn member = do
 
 idToMPost :: Connection -> PostId -> IO (Maybe Post)
 idToMPost conn idPost =
-  (liftM rowsToMPost) $ query conn "SELECT (id, text, date, token, \"MemberId\") FROM \"Posts\" WHERE id = ?" (Only idPost)
+  (liftM rowsToMPost) $ query conn "SELECT id, text, date, token, \"MemberId\" FROM \"Posts\" WHERE id = ?" (Only idPost)
 
 updateText :: Connection -> PostId -> String -> IO (Maybe Post)
 updateText conn idPost text =

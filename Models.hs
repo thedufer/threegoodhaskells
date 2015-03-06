@@ -14,7 +14,7 @@ type Code = String
 data LoginCode = LoginCode LoginCodeId Code UTCTimestamp MemberId deriving (Show)
 
 type TokenId = Id
-data Token = Token TokenId String MemberId deriving (Show)
+data Token = Token TokenId Code MemberId deriving (Show)
 
 type PostId = Id
 type PostToken = String

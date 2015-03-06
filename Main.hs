@@ -4,6 +4,7 @@ import Database.PostgreSQL.Simple (connectPostgreSQL)
 import Control.Monad.Trans (liftIO)
 import qualified Data.ByteString.Char8 as C8
 import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
+import Web.Scotty.Cookie (setCookie)
 
 import qualified Templates.Pages as Pages
 import qualified Auth
@@ -53,10 +54,12 @@ main = do
             Just member -> do
               mPost <- liftIO $ DB.Post.newPost conn member
               case mPost of
-                Nothing -> redirect "/signup?err=unknown"
-                Just (Models.Post idPost _ uDate token _) ->
-                  case uDate of
-                    Finite date -> do
-                      liftIO $ Mail.sendFirstPostMail conn member idPost token (Time.formatPostDate date)
+                Just (Models.Post idPost _ (Finite date) postToken _) -> do
+                  mToken <- liftIO $ Auth.makeToken conn (Models.memberToId member)
+                  case mToken of
+                    Just token -> do
+                      liftIO $ Mail.sendFirstPostMail conn member idPost postToken (Time.formatPostDate date)
+                      setCookie (Auth.tokenToCookie token)
                       redirect "/"
                     _ -> redirect "/signup?err=unknown"
+                _ -> redirect "/signup?err=unknown"

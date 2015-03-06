@@ -28,5 +28,5 @@ rowsToMMember = (liftM rowToMember) . listToMaybe
 
 idToMMember :: Connection -> MemberId -> IO (Maybe Member)
 idToMMember conn id = do
-  xs <- query conn "SELECT (id, email, unsubscribed, \"sendTime\", \"nextEmailDate\") FROM Members WHERE id = ?;" (Only id)
+  xs <- query conn "SELECT id, email, unsubscribed, \"sendTime\", \"nextEmailDate\" FROM \"Members\" WHERE id = ?;" (Only id)
   return (rowsToMMember xs)

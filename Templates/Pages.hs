@@ -1,4 +1,4 @@
-module Templates.Pages (home, login, signup) where
+module Templates.Pages (landing, login, signup, posts, settings) where
 
 import Lucid
 import Data.Text
@@ -76,8 +76,8 @@ signupForm = form_ [action_ "signup", method_ "post"] $ do
   " "
   input_ [type_ "submit", value_ "Sign Up", class_ "btn btn-success"]
 
-home :: Maybe Member -> TL.Text
-home u = renderText $ html_ $ do
+landing :: TL.Text
+landing = renderText $ html_ $ do
   Templates.Pages.head
   body_ $ do
     div_ [class_ "container"] $ do
@@ -92,3 +92,11 @@ home u = renderText $ html_ $ do
         p_ [class_ "col-xs-4"] "3. You get a collection of daily reflections"
         p_ [class_ "col-xs-12", style_ "padding-top: 12px;"] "All we need is your email address:"
         signupForm
+
+posts :: Member -> [Post] -> TL.Text
+posts member posts = renderText $ html_ $ do
+  Templates.Pages.head
+
+settings :: Member -> TL.Text
+settings member = renderText $ html_ $ do
+  Templates.Pages.head

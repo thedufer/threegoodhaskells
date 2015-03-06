@@ -31,17 +31,39 @@ main = do
     get "/" $ do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req
-      html $ Pages.home mMember
+      case mMember of
+        Nothing -> html $ Pages.landing
+        Just _ -> redirect "/posts"
     get "/login" $ do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req
       case mMember of
-        Nothing -> html $ Pages.login Nothing
+        Nothing -> do
+          ps <- params
+          html $ Pages.login $ (liftM L.unpack) $ getParam "err" ps
         Just member -> redirect "/"
+    get "/posts" $ do
+      req <- request
+      mMember <- liftIO $ Auth.loadSession conn req
+      case mMember of
+        Nothing -> redirect "/"
+        Just member -> do
+          posts <- liftIO $ DB.Post.memberToPosts conn member
+          html $ Pages.posts member posts
+    get "/settings" $ do
+      req <- request
+      mMember <- liftIO $ Auth.loadSession conn req
+      case mMember of
+        Nothing -> redirect "/"
+        Just member -> html $ Pages.settings member
     get "/signup" $ do
       req <- request
-      ps <- params
-      html $ Pages.signup $ (liftM L.unpack) $ getParam "err" ps
+      mMember <- liftIO $ Auth.loadSession conn req
+      case mMember of
+        Just _ -> redirect "/"
+        Nothing -> do
+          ps <- params
+          html $ Pages.signup $ (liftM L.unpack) $ getParam "err" ps
     post "/signup" $ do
       req <- request
       ps <- params

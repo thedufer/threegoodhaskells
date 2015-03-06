@@ -1,4 +1,4 @@
-module DB.Post (newPost) where
+module DB.Post (newPost, memberToPosts) where
 
 import Models
 import Time (currentPostDate)
@@ -52,3 +52,7 @@ addToPost conn idPost text = do
       case mOldText of
         Nothing -> updateText conn idPost text
         Just oldText -> updateText conn idPost (oldText ++ "\n" ++ text)
+
+memberToPosts :: Connection -> Member -> IO ([Post])
+memberToPosts conn (Member idMember _ _ _ _) =
+  (liftM $ map rowToPost) $ query conn "SELECT id, text, date, token, \"MemberId\" FROM \"Posts\" WHERE \"MemberId\" = ?" (Only idMember)

@@ -30,7 +30,7 @@ sendFirstPostMail conn member idPost token day = do
   case mLoginCode of
     Nothing -> fail "Failed to build a login code"
     Just loginCode ->
-      let from = doNotReplyEmail -- makeFromEmail idPost token
+      let from = doNotReplyEmail
           to = memberToEmail member
           toAddress = Address Nothing (Text.pack to)
           cc = []

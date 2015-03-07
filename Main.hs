@@ -49,7 +49,7 @@ main = do
         Nothing -> redirect "/"
         Just member -> do
           posts <- liftIO $ DB.Post.memberToPosts conn member
-          html $ Pages.posts member posts
+          html $ Pages.posts posts
     get "/settings" $ do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req

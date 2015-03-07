@@ -5,6 +5,7 @@ import Control.Monad.Trans (liftIO)
 import qualified Data.ByteString.Char8 as C8
 import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
 import Web.Scotty.Cookie (setCookie)
+import Network.HTTP.Types.Status (status400)
 
 import qualified Templates.Pages as Pages
 import qualified Auth
@@ -13,6 +14,7 @@ import qualified DB.Member
 import qualified DB.Post
 import qualified Mail
 import qualified Time
+import qualified Post
 
 import Data.List (find)
 import qualified Data.Text.Lazy as L
@@ -85,3 +87,24 @@ main = do
                       redirect "/"
                     _ -> redirect "/signup?err=unknown"
                 _ -> redirect "/signup?err=unknown"
+    post "/message" $ do
+      req <- request
+      ps <- params
+      fs <- files
+      liftIO $ putStrLn "-------------------------"
+      liftIO $ putStrLn (show ps)
+      liftIO $ putStrLn ""
+      liftIO $ putStrLn (show fs)
+      liftIO $ putStrLn ""
+      let
+        mEmail = getParam "recipient" ps
+        mText = getParam "stripped-text" ps
+        mSubject = getParam "subject" ps
+      case (mEmail, mText, mSubject) of
+        (Just email, Just text, Just subject) -> do
+          liftIO $ putStrLn $ (show email) ++ " " ++ (show text) ++ " " ++ (show subject)
+          success <- liftIO $ Post.addToPost conn (L.unpack email) (L.unpack text) fs
+          case success of
+            False -> status status400
+            True -> html ""
+        _ -> status status400

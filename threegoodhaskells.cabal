@@ -63,6 +63,7 @@ executable threegoodhaskells
   build-depends:       base >=4.6 && <4.8
                      , scotty
                      , scotty-cookie
+                     , http-types
                      , lucid
                      , text
                      , wai
@@ -80,6 +81,7 @@ executable threegoodhaskells
                      , transformers
                      , monad-control
                      , mime-types
+                     , attoparsec
 
   default-extensions: OverloadedStrings
                     , FlexibleContexts

@@ -1,4 +1,4 @@
-module DB.Post (newPost, memberToPosts) where
+module DB.Post (newPost, memberToPosts, addToPost) where
 
 import Models
 import Time (currentPostDate)
@@ -39,16 +39,20 @@ idToMPost :: Connection -> PostId -> IO (Maybe Post)
 idToMPost conn idPost =
   (liftM rowsToMPost) $ query conn "SELECT id, text, date, token, \"MemberId\" FROM \"Posts\" WHERE id = ?" (Only idPost)
 
+tokenToMPost :: Connection -> PostToken -> IO (Maybe Post)
+tokenToMPost conn postToken =
+  (liftM rowsToMPost) $ query conn "SELECT id, text, date, token, \"MemberId\" FROM \"Posts\" WHERE token = ?" (Only postToken)
+
 updateText :: Connection -> PostId -> String -> IO (Maybe Post)
 updateText conn idPost text =
   (liftM rowsToMPost) $ query conn "UPDATE \"Posts\" SET text = ? WHERE id = ? RETURNING id, text, date, token, \"MemberId\"" (text, idPost)
 
-addToPost :: Connection -> PostId -> String -> IO (Maybe Post)
-addToPost conn idPost text = do
-  mPost <- idToMPost conn idPost
+addToPost :: Connection -> PostToken -> String -> IO (Maybe Post)
+addToPost conn postToken text = do
+  mPost <- tokenToMPost conn postToken
   case mPost of
     Nothing -> return Nothing
-    Just (Post _ mOldText _ _ _) -> do
+    Just (Post idPost mOldText _ _ _) -> do
       case mOldText of
         Nothing -> updateText conn idPost text
         Just oldText -> updateText conn idPost (oldText ++ "\n" ++ text)

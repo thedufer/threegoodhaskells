@@ -1,4 +1,4 @@
-module DB.Member (newMember, idToMMember) where
+module DB.Member (newMember, idToMMember, membersNeedEmail, bumpNextEmailDate) where
 
 import Models
 import Time (currentSendTime, sendTimeToNextEmailDate)
@@ -30,3 +30,15 @@ idToMMember :: Connection -> MemberId -> IO (Maybe Member)
 idToMMember conn id = do
   xs <- query conn "SELECT id, email, unsubscribed, \"sendTime\", \"nextEmailDate\" FROM \"Members\" WHERE id = ?;" (Only id)
   return (rowsToMMember xs)
+
+membersNeedEmail :: Connection -> IO ([Member])
+membersNeedEmail conn = do
+  curTime <- getCurrentTime
+  xs <- query conn "SELECT id, email, unsubscribed, \"sendTime\", \"nextEmailDate\" FROM \"Members\" WHERE \"nextEmailDate\" < ?;" (Only curTime)
+  return $ map rowToMember xs
+
+bumpNextEmailDate :: Connection -> Member -> IO ()
+bumpNextEmailDate conn (Member idMember _ _ sendTime _) = do
+  nextEmailDate <- sendTimeToNextEmailDate sendTime
+  execute conn "UPDATE \"Members\" SET \"nextEmailDate\" = ? WHERE id = ?;" (nextEmailDate, idMember)
+  return ()

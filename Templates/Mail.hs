@@ -1,4 +1,4 @@
-module Templates.Mail (firstPost, firstPostResponse) where
+module Templates.Mail (firstPost, firstPostResponse, otherPost, login) where
 
 import Lucid
 import Data.Text
@@ -7,14 +7,18 @@ import qualified Data.Text.Lazy as TL
 import qualified Settings
 import Models
 
+loginLink :: MemberId -> Code -> String -> Text
+loginLink idMember code redirect = pack $
+  Settings.fullDomain ++ "/login-link?id=" ++ (show idMember) ++ "&code=" ++ code ++ "&redirect=" ++ redirect
+
 footer :: MemberId -> Code -> Html ()
 footer idMember code = do
   br_ []
   br_ []
   br_ []
-  a_ [href_ $ pack (Settings.fullDomain ++ "/login-link?id=" ++ (show idMember) ++ "&code=" ++ code ++ "&redirect=/posts")] "Previous Posts"
+  a_ [href_ $ loginLink idMember code "/posts"] "Previous Posts"
   " "
-  a_ [href_ $ pack (Settings.fullDomain ++ "/login-link?id=" ++ (show idMember) ++ "&code=" ++ code ++ "&redirect=/settings")] "Unsubscribe"
+  a_ [href_ $ loginLink idMember code "/settings"] "Unsubscribe"
 
 firstPost :: MemberId -> Code -> TL.Text
 firstPost idMember code = renderText $ do
@@ -28,6 +32,18 @@ firstPostResponse idMember code = renderText $ do
   "Congrats on your writing your first entry!"
   br_ []
   "You can check it out "
-  a_ [href_ $ pack (Settings.fullDomain ++ "/login-link?id=" ++ (show idMember) ++ "&code=" ++ code ++ "&redirect=/posts")] "here"
+  a_ [href_ $ loginLink idMember code "/posts"] "here"
   "."
+  footer idMember code
+
+otherPost :: MemberId -> Code -> TL.Text
+otherPost idMember code = renderText $ do
+  "Just reply to this email with your Three Good Things."
+  br_ []
+  footer idMember code
+
+login :: MemberId -> Code -> TL.Text
+login idMember code = renderText $ do
+  a_ [href_ $ loginLink idMember code "/posts"] "Click here"
+  " to log in."
   footer idMember code

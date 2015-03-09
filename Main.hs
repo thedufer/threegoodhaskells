@@ -6,6 +6,7 @@ import qualified Data.ByteString.Char8 as C8
 import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
 import Web.Scotty.Cookie (setCookie)
 import Network.HTTP.Types.Status (status400)
+import Control.Concurrent (forkIO)
 
 import qualified Templates.Pages as Pages
 import qualified Auth
@@ -15,6 +16,7 @@ import qualified DB.Post
 import qualified Mail
 import qualified Time
 import qualified Post
+import qualified MailTask
 
 import Data.List (find)
 import qualified Data.Text.Lazy as L
@@ -29,6 +31,7 @@ getParam t = (liftM snd) . find (\x -> (fst x) == t)
 main :: IO ()
 main = do
   conn <- connectPostgreSQL "dbname='threegoodhaskells'"
+  forkIO $ MailTask.taskForever conn
   scotty 3000 $ do
     get "/" $ do
       req <- request

@@ -4,7 +4,7 @@ import Database.PostgreSQL.Simple (connectPostgreSQL, Connection)
 import Control.Monad.Trans (liftIO)
 import qualified Data.ByteString.Char8 as C8
 import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
-import Web.Scotty.Cookie (setCookie)
+import Web.Scotty.Cookie (deleteCookie, setCookie)
 import Network.HTTP.Types.Status (status400)
 import Control.Concurrent (forkIO)
 
@@ -92,6 +92,9 @@ main = do
               case succ of
                 False -> redirect "/login?err=unknown"
                 True -> redirect "/checkemail"
+    get "/logout" $ do
+      deleteCookie "token"
+      redirect "/"
     get "/posts" $ do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req

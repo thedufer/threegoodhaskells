@@ -1,4 +1,4 @@
-module DB.Member (newMember, idToMMember, membersNeedEmail, bumpNextEmailDate) where
+module DB.Member (newMember, idToMMember, membersNeedEmail, bumpNextEmailDate, emailToMMember) where
 
 import Models
 import Time (currentSendTime, sendTimeToNextEmailDate)
@@ -29,6 +29,11 @@ rowsToMMember = (liftM rowToMember) . listToMaybe
 idToMMember :: Connection -> MemberId -> IO (Maybe Member)
 idToMMember conn id = do
   xs <- query conn "SELECT id, email, unsubscribed, \"sendTime\", \"nextEmailDate\" FROM \"Members\" WHERE id = ?;" (Only id)
+  return (rowsToMMember xs)
+
+emailToMMember :: Connection -> Email -> IO (Maybe Member)
+emailToMMember conn email = do
+  xs <- query conn "SELECT id, email, unsubscribed, \"sendTime\", \"nextEmailDate\" FROM \"Members\" WHERE email = ?;" (Only email)
   return (rowsToMMember xs)
 
 membersNeedEmail :: Connection -> IO ([Member])

@@ -1,6 +1,6 @@
 import Web.Scotty
 import Network.Wai
-import Database.PostgreSQL.Simple (connectPostgreSQL)
+import Database.PostgreSQL.Simple (connectPostgreSQL, Connection)
 import Control.Monad.Trans (liftIO)
 import qualified Data.ByteString.Char8 as C8
 import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
@@ -13,10 +13,12 @@ import qualified Auth
 import qualified Models
 import qualified DB.Member
 import qualified DB.Post
+import qualified DB.LoginCode
 import qualified Mail
 import qualified Time
 import qualified Post
 import qualified MailTask
+import Util (maybeRead)
 
 import Data.List (find)
 import qualified Data.Text.Lazy as L
@@ -27,6 +29,23 @@ showToHtml = html . L.pack . show
 
 getParam :: L.Text -> [Param] -> Maybe L.Text
 getParam t = (liftM snd) . find (\x -> (fst x) == t)
+
+doLogin :: Connection -> Models.MemberId -> Models.Code -> L.Text -> ActionM ()
+doLogin conn idMember code redirURL = do
+  mMember <- liftIO $ DB.Member.idToMMember conn idMember
+  case mMember of
+    Nothing -> redirect "/login?err=badcode"
+    Just member -> do
+      mLoginCode <- liftIO $ DB.LoginCode.codeToMLoginCode conn code idMember
+      case mLoginCode of
+        Nothing -> redirect "/login?err=badcode"
+        Just _ -> do
+          mToken <- liftIO $ Auth.makeToken conn (Models.memberToId member)
+          case mToken of
+            Just token -> do
+              setCookie (Auth.tokenToCookie token)
+              redirect redirURL
+            _ -> redirect "/login?err=unknown"
 
 main :: IO ()
 main = do
@@ -47,6 +66,32 @@ main = do
           ps <- params
           html $ Pages.login $ (liftM L.unpack) $ getParam "err" ps
         Just member -> redirect "/"
+    get "/checkemail" $ do
+      html $ Pages.checkEmail
+    get "/login-link" $ do
+      req <- request
+      ps <- params
+      case (maybeRead =<< (liftM L.unpack $ getParam "id" ps), (getParam "code" ps)) of
+        (Just id, Just code) ->
+          case (getParam "redirect" ps) of
+            Nothing -> doLogin conn id (L.unpack code) "/"
+            Just "" -> doLogin conn id (L.unpack code) "/"
+            Just redirect -> doLogin conn id (L.unpack code) redirect
+        _ -> redirect "/login?err=unknown"
+    post "/login" $ do
+      req <- request
+      ps <- params
+      case (getParam "email" ps) of
+        Nothing -> redirect "/"
+        Just email -> do
+          mMember <- liftIO $ DB.Member.emailToMMember conn (L.unpack email)
+          case mMember of
+            Nothing -> redirect "/login?err=notfound"
+            Just member -> do
+              succ <- liftIO $ Mail.sendLoginMail conn member
+              case succ of
+                False -> redirect "/login?err=unknown"
+                True -> redirect "/checkemail"
     get "/posts" $ do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req

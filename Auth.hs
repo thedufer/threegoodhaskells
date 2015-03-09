@@ -5,6 +5,7 @@ import DB.Member
 import DB.LoginCode
 import DB.Token
 import qualified RandomStrings
+import Util (maybeRead)
 
 import qualified Data.Text
 import Control.Monad (liftM)
@@ -13,7 +14,6 @@ import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
 import Network.Wai
 import Data.List (find)
-import Data.Maybe (listToMaybe)
 import Data.Time.Clock (getCurrentTime, addUTCTime)
 import Web.Scotty.Cookie (makeSimpleCookie)
 import Web.Cookie (SetCookie)
@@ -42,9 +42,6 @@ tokenCookieToMTokenTuple tc = case (Data.Text.splitOn "-" tc) of
 
 reqToMStringTokenTuple :: Request -> Maybe (Data.Text.Text, Data.Text.Text)
 reqToMStringTokenTuple = (tokenCookieToMTokenTuple =<<) . cookiesToMTokenCookie . reqToCookies
-
-maybeRead :: Read a => String -> Maybe a
-maybeRead = (liftM fst) . listToMaybe . reads
 
 stringTokenTupleToMTokenTuple :: (Data.Text.Text, Data.Text.Text) -> Maybe (MemberId, String)
 stringTokenTupleToMTokenTuple (a, b) = do

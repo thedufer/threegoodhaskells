@@ -1,4 +1,4 @@
-module Templates.Pages (landing, login, signup, posts, settings) where
+module Templates.Pages (landing, login, signup, posts, settings, checkEmail) where
 
 import Lucid
 import Data.Text
@@ -14,6 +14,12 @@ signupErrMap :: Maybe String -> Html ()
 signupErrMap (Just "inuse") = p_ [class_ "text-danger"] "That email address is already in use."
 signupErrMap (Just "unknown") = p_ [class_ "text-danger"] "Something went terribly wrong.  Try again or shoot me an email."
 signupErrMap _ = ""
+
+loginErrMap :: Maybe String -> Html ()
+loginErrMap (Just "notfound") = p_ [class_ "text-danger"] "Email address not found."
+loginErrMap (Just "badcode") = p_ [class_ "text-danger"] "Login code not recognized.  Please try again."
+loginErrMap (Just "unknown") = p_ [class_ "text-danger"] "Unknown error.  Please try again later."
+loginErrMap _ = ""
 
 signup :: Maybe String -> TL.Text
 signup mStr = renderText $ html_ $ do
@@ -32,6 +38,7 @@ login mStr = renderText $ html_ $ do
     div_ [class_ "container"] $ do
       Templates.Pages.header [loginLink True]
       h3_ "Log In"
+      loginErrMap mStr
       form_ [action_ "login", method_ "post"] $ do
         div_ [style_ "display: inline-block;"] $ do
           input_ [type_ "email", placeholder_ "Email Address", name_ "email", class_ "form-control"]
@@ -193,3 +200,11 @@ settings (Member _ _ unsubscribed sendTime _) = renderText $ html_ $ do
               h4_ "Is the pressure overwhelming?"
               form_ [action_ "unsubscribe", method_ "post"] $ do
                 button_ [type_ "submit", class_ "btn"] "Unsubscribe"
+
+checkEmail :: TL.Text
+checkEmail = renderText $ html_ $ do
+  Templates.Pages.head
+  body_ $ do
+    div_ [class_ "container"] $ do
+      Templates.Pages.header [loginLink False]
+      h4_ "Check your email for a link!"

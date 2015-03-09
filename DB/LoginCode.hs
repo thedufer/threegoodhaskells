@@ -1,4 +1,4 @@
-module DB.LoginCode (insertLoginCode) where
+module DB.LoginCode (insertLoginCode, codeToMLoginCode) where
 
 import Models
 
@@ -18,3 +18,9 @@ rowToLoginCode (id, code, expires, idMember) = LoginCode id code expires idMembe
 
 rowsToMLoginCode :: [(LoginCodeId, Code, UTCTimestamp, MemberId)] -> Maybe LoginCode
 rowsToMLoginCode = (liftM rowToLoginCode) . listToMaybe
+
+codeToMLoginCode :: Connection -> Code -> MemberId -> IO (Maybe LoginCode)
+codeToMLoginCode conn code idMember = do
+  curTime <- getCurrentTime
+  xs <- query conn "SELECT id, code, expires, \"MemberId\" FROM \"LoginCodes\" WHERE code = ? AND \"MemberId\" = ? AND expires > ?;" (code, idMember, curTime)
+  return (rowsToMLoginCode xs)

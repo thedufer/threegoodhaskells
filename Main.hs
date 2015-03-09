@@ -30,6 +30,19 @@ showToHtml = html . L.pack . show
 getParam :: L.Text -> [Param] -> Maybe L.Text
 getParam t = (liftM snd) . find (\x -> (fst x) == t)
 
+getIntParam :: L.Text -> [Param] -> Maybe Int
+getIntParam t ps = maybeRead =<< ((liftM L.unpack) (getParam t ps))
+
+setUnsubscribed :: Connection -> Bool -> ActionM ()
+setUnsubscribed conn unsubscribe = do
+  req <- request
+  mMember <- liftIO $ Auth.loadSession conn req
+  case mMember of 
+    Nothing -> redirect "/settings?err=unknown"
+    Just member -> do
+      liftIO $ DB.Member.setUnsubscribed conn (Models.memberToId member) unsubscribe
+      redirect "/settings"
+
 doLogin :: Connection -> Models.MemberId -> Models.Code -> L.Text -> ActionM ()
 doLogin conn idMember code redirURL = do
   mMember <- liftIO $ DB.Member.idToMMember conn idMember
@@ -71,7 +84,7 @@ main = do
     get "/login-link" $ do
       req <- request
       ps <- params
-      case (maybeRead =<< (liftM L.unpack $ getParam "id" ps), (getParam "code" ps)) of
+      case ((getIntParam "id" ps), (getParam "code" ps)) of
         (Just id, Just code) ->
           case (getParam "redirect" ps) of
             Nothing -> doLogin conn id (L.unpack code) "/"
@@ -109,6 +122,20 @@ main = do
       case mMember of
         Nothing -> redirect "/"
         Just member -> html $ Pages.settings member
+    post "/time" $ do
+      req <- request
+      ps <- params
+      mMember <- liftIO $ Auth.loadSession conn req
+      case (mMember, getIntParam "sendTime" ps) of
+        (Just member, Just sendTime) -> do
+          liftIO $ DB.Member.setSendTime conn (Models.memberToId member) sendTime
+          redirect "/settings"
+        _ -> redirect "/settings?err=unknown"
+      redirect "/settings"
+    post "/subscribe" $ do
+      setUnsubscribed conn False
+    post "/unsubscribe" $ do
+      setUnsubscribed conn True
     get "/signup" $ do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req

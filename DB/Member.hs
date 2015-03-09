@@ -1,10 +1,10 @@
-module DB.Member (newMember, idToMMember, membersNeedEmail, bumpNextEmailDate, emailToMMember) where
+module DB.Member (newMember, idToMMember, membersNeedEmail, bumpNextEmailDate, emailToMMember, setUnsubscribed, setSendTime) where
 
 import Models
 import Time (currentSendTime, sendTimeToNextEmailDate)
 
 import Database.PostgreSQL.Simple
-import Control.Monad (liftM)
+import Control.Monad (liftM, void)
 import Data.Maybe (listToMaybe)
 import Database.PostgreSQL.Simple.Time
 import Data.Time.Clock
@@ -47,3 +47,12 @@ bumpNextEmailDate conn (Member idMember _ _ sendTime _) = do
   nextEmailDate <- sendTimeToNextEmailDate sendTime
   execute conn "UPDATE \"Members\" SET \"nextEmailDate\" = ? WHERE id = ?;" (nextEmailDate, idMember)
   return ()
+
+setUnsubscribed :: Connection -> MemberId -> Bool -> IO ()
+setUnsubscribed conn idMember unsubscribed =
+  void $ execute conn "UPDATE \"Members\" SET unsubscribed = ? WHERE id = ?;" (unsubscribed, idMember)
+
+setSendTime :: Connection -> MemberId -> SendTime -> IO ()
+setSendTime conn idMember sendTime = do
+  nextEmailDate <- sendTimeToNextEmailDate sendTime
+  void $ execute conn "UPDATE \"Members\" SET \"nextEmailDate\" = ?, \"sendTime\" = ? WHERE id = ?;" (nextEmailDate, sendTime, idMember)

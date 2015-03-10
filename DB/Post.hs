@@ -16,9 +16,9 @@ rowToPost (id, mText, date, postToken, idMember) = Post id mText date postToken 
 rowsToMPost :: [(PostId, Maybe String, UTCTimestamp, PostToken, MemberId)] -> Maybe Post
 rowsToMPost = (liftM rowToPost) . listToMaybe
 
-dateToPost :: Connection -> UTCTime -> IO (Maybe Post)
-dateToPost conn date =
-  (liftM rowsToMPost) $ query conn "SELECT id, text, date, token, \"MemberId\" FROM \"Posts\" WHERE date = ?" (Only date)
+dateToPost :: Connection -> MemberId -> UTCTime -> IO (Maybe Post)
+dateToPost conn idMember date =
+  (liftM rowsToMPost) $ query conn "SELECT id, text, date, token, \"MemberId\" FROM \"Posts\" WHERE date = ? AND \"MemberId\" = ?" (date, idMember)
 
 insertPost :: Connection -> Post -> IO (Maybe Post)
 insertPost conn (Post _ text date token idMember) = do
@@ -28,7 +28,7 @@ insertPost conn (Post _ text date token idMember) = do
 newPost :: Connection -> Member -> IO (Maybe Post)
 newPost conn member = do
   date <- currentPostDate
-  mPrevPost <- dateToPost conn date
+  mPrevPost <- dateToPost conn (memberToId member) date
   case mPrevPost of
     Just prevPost -> return Nothing
     Nothing -> do

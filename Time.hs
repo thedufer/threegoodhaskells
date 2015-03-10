@@ -14,8 +14,8 @@ formatPostDate = formatTime defaultTimeLocale "%a %h %e %Y"
 currentPostDate :: IO UTCTime
 currentPostDate = do
   curTime <- getCurrentTime
-  curTimeAdj <- return $ addUTCTime (-60 * 60 * 24) curTime
-  time <- return $ (fromRational . toRational . negate . utctDayTime) curTimeAdj
+  let curTimeAdj = addUTCTime (-60 * 60 * 7) curTime
+      time = (fromRational . toRational . negate . utctDayTime) curTimeAdj
   return $ addUTCTime time curTimeAdj
 
 currentSendTime :: IO SendTime

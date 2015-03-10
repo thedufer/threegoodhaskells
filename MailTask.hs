@@ -26,10 +26,9 @@ task conn = do
 
 taskForMember :: Connection -> Member -> IO ()
 taskForMember conn member = do
-  succ <- mailMember conn member
-  case succ of
-    False -> return ()
-    True -> DB.Member.bumpNextEmailDate conn member
+  mailMember conn member
+  DB.Member.bumpNextEmailDate conn member
+  return ()
 
 mailMember :: Connection -> Member -> IO Bool
 mailMember conn member = do

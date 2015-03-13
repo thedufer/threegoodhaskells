@@ -9,7 +9,7 @@ import Models
 
 loginLink :: MemberId -> Code -> String -> Text
 loginLink idMember code redirect = pack $
-  Settings.fullDomain ++ "/login-link?id=" ++ (show idMember) ++ "&code=" ++ code ++ "&redirect=" ++ redirect
+  Settings.fullDomain ++ "/login-link?id=" ++ show idMember ++ "&code=" ++ code ++ "&redirect=" ++ redirect
 
 footer :: MemberId -> Code -> Html ()
 footer idMember code = do

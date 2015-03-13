@@ -24,7 +24,7 @@ loginErrMap _ = ""
 signup :: Maybe String -> TL.Text
 signup mStr = renderText $ html_ $ do
   Templates.Pages.head
-  body_ $ do
+  body_ $
     div_ [class_ "container"] $ do
       Templates.Pages.header [loginLink False]
       h3_ "Sign Up"
@@ -34,13 +34,13 @@ signup mStr = renderText $ html_ $ do
 login :: Maybe String -> TL.Text
 login mStr = renderText $ html_ $ do
   Templates.Pages.head
-  body_ $ do
+  body_ $
     div_ [class_ "container"] $ do
       Templates.Pages.header [loginLink True]
       h3_ "Log In"
       loginErrMap mStr
       form_ [action_ "login", method_ "post"] $ do
-        div_ [style_ "display: inline-block;"] $ do
+        div_ [style_ "display: inline-block;"] $
           input_ [type_ "email", placeholder_ "Email Address", name_ "email", class_ "form-control"]
         " "
         input_ [type_ "submit", value_ "Log In", class_ "btn btn-success"]
@@ -58,14 +58,14 @@ logoutLink :: Html ()
 logoutLink = headerLink "/logout" "Log Out" False
 
 headerLink :: Text -> Html () -> Bool -> Html ()
-headerLink url text True  = li_ [class_ "active"] $ do
+headerLink url text True  = li_ [class_ "active"] $
   a_ [href_ url] text
-headerLink url text False = li_ $ do
+headerLink url text False = li_ $
   a_ [href_ url] text
 
 header :: [Html ()] -> Html ()
 header lis = div_ [class_ "header"] $ do
-  ul_ [class_ "nav nav-pills pull-right"] $ do
+  ul_ [class_ "nav nav-pills pull-right"] $
     sequence_ lis
   h3_ [class_ "text-muted"] "Three Good Things"
 
@@ -95,7 +95,7 @@ head = headPlus $ void ""
 
 signupForm :: Html ()
 signupForm = form_ [action_ "signup", method_ "post"] $ do
-  div_ [style_ "display: inline-block;"] $ do
+  div_ [style_ "display: inline-block;"] $
     input_ [type_ "email", placeholder_ "Email Address", name_ "email", class_ "form-control"]
   " "
   input_ [type_ "submit", value_ "Sign Up", class_ "btn btn-success"]
@@ -103,7 +103,7 @@ signupForm = form_ [action_ "signup", method_ "post"] $ do
 landing :: TL.Text
 landing = renderText $ html_ $ do
   Templates.Pages.head
-  body_ $ do
+  body_ $
     div_ [class_ "container"] $ do
       Templates.Pages.header [loginLink False]
       div_ [class_ "jumbotron"] $ do
@@ -126,7 +126,7 @@ postToHtml _ = void ""
 posts :: [Post] -> TL.Text
 posts ps = renderText $ html_ $ do
   Templates.Pages.head
-  body_ $ do
+  body_ $
     div_ [class_ "container"] $ do
       Templates.Pages.header [postsLink True, settingsLink False, logoutLink]
       h3_ "Posts"
@@ -134,9 +134,9 @@ posts ps = renderText $ html_ $ do
 
 settings :: Member -> TL.Text
 settings (Member _ _ unsubscribed sendTime _) = renderText $ html_ $ do
-  Templates.Pages.headPlus $ do
+  Templates.Pages.headPlus $
     script_ $ Data.Text.pack (Data.String.unlines [
-      "var sendTimeUTC = " ++ (show sendTime) ++ ";",
+      "var sendTimeUTC = " ++ show sendTime ++ ";",
       "window.onload = function() {",
       "  var d = new Date();",
       "  d.setUTCMinutes(sendTimeUTC % 60);",
@@ -173,7 +173,7 @@ settings (Member _ _ unsubscribed sendTime _) = renderText $ html_ $ do
       "  form.getElementsByClassName('sendTime')[0].value = newSendTimeUTC;",
       "  return true;",
       "};" ])
-  body_ $ do
+  body_ $
     div_ [class_ "container"] $ do
       Templates.Pages.header [postsLink False, settingsLink True, logoutLink]
       p_ $ do
@@ -189,22 +189,22 @@ settings (Member _ _ unsubscribed sendTime _) = renderText $ html_ $ do
             input_ [type_ "text", class_ "hemi", maxlength_ "2", size_ "2"]
           input_ [type_ "hidden", class_ "sendTime", name_ "sendTime", value_ ""]
           button_ [type_ "submit", class_ "btn"] "Save"
-        case unsubscribed of
-          True -> do
+        if unsubscribed
+          then
             div_ $ do
               h4_ "Miss us?"
-              form_ [action_ "subscribe", method_ "post"] $ do
+              form_ [action_ "subscribe", method_ "post"] $
                 button_ [type_ "submit", class_ "btn"] "Resubscribe"
-          False -> do
+          else
             div_ $ do
               h4_ "Is the pressure overwhelming?"
-              form_ [action_ "unsubscribe", method_ "post"] $ do
+              form_ [action_ "unsubscribe", method_ "post"] $
                 button_ [type_ "submit", class_ "btn"] "Unsubscribe"
 
 checkEmail :: TL.Text
 checkEmail = renderText $ html_ $ do
   Templates.Pages.head
-  body_ $ do
+  body_ $
     div_ [class_ "container"] $ do
       Templates.Pages.header [loginLink False]
       h4_ "Check your email for a link!"

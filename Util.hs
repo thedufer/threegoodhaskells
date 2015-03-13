@@ -4,4 +4,4 @@ import Control.Monad (liftM)
 import Data.Maybe (listToMaybe)
 
 maybeRead :: Read a => String -> Maybe a
-maybeRead = (liftM fst) . listToMaybe . reads
+maybeRead = liftM fst . listToMaybe . reads

@@ -20,8 +20,8 @@ taskForever conn = void $ forever $ do
 task :: Connection -> IO ()
 task conn = do
   members <- DB.Member.membersNeedEmail conn
-  mapM (taskForMember conn) members
-  putStrLn $ show $ length members
+  print $ length members
+  mapM_ (taskForMember conn) members
   return ()
 
 taskForMember :: Connection -> Member -> IO ()
@@ -37,7 +37,7 @@ mailMember conn member = do
     Just (Post idPost _ (Finite date) postToken _) -> do
       mToken <- Auth.makeToken conn (memberToId member)
       case mToken of
-        Just token -> do
+        Just token ->
           Mail.sendOtherPostMail conn member idPost postToken (Time.formatPostDate date)
         _ -> return False
     _ -> return False

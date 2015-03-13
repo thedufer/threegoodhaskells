@@ -24,14 +24,11 @@ import Data.List (find)
 import qualified Data.Text.Lazy as L
 import Control.Monad (liftM)
 
-showToHtml :: Show a => a -> ActionM ()
-showToHtml = html . L.pack . show
-
 getParam :: L.Text -> [Param] -> Maybe L.Text
-getParam t = (liftM snd) . find (\x -> (fst x) == t)
+getParam t = liftM snd . find (\x -> fst x == t)
 
 getIntParam :: L.Text -> [Param] -> Maybe Int
-getIntParam t ps = maybeRead =<< ((liftM L.unpack) (getParam t ps))
+getIntParam t ps = maybeRead =<< liftM L.unpack (getParam t ps)
 
 setUnsubscribed :: Connection -> Bool -> ActionM ()
 setUnsubscribed conn unsubscribe = do
@@ -69,7 +66,7 @@ main = do
       req <- request
       mMember <- liftIO $ Auth.loadSession conn req
       case mMember of
-        Nothing -> html $ Pages.landing
+        Nothing -> html Pages.landing
         Just _ -> redirect "/posts"
     get "/login" $ do
       req <- request
@@ -77,16 +74,16 @@ main = do
       case mMember of
         Nothing -> do
           ps <- params
-          html $ Pages.login $ (liftM L.unpack) $ getParam "err" ps
+          html $ Pages.login $ liftM L.unpack $ getParam "err" ps
         Just member -> redirect "/"
-    get "/checkemail" $ do
-      html $ Pages.checkEmail
+    get "/checkemail" $
+      html Pages.checkEmail
     get "/login-link" $ do
       req <- request
       ps <- params
-      case ((getIntParam "id" ps), (getParam "code" ps)) of
+      case (getIntParam "id" ps, getParam "code" ps) of
         (Just id, Just code) ->
-          case (getParam "redirect" ps) of
+          case getParam "redirect" ps of
             Nothing -> doLogin conn id (L.unpack code) "/"
             Just "" -> doLogin conn id (L.unpack code) "/"
             Just redirect -> doLogin conn id (L.unpack code) redirect
@@ -94,7 +91,7 @@ main = do
     post "/login" $ do
       req <- request
       ps <- params
-      case (getParam "email" ps) of
+      case getParam "email" ps of
         Nothing -> redirect "/"
         Just email -> do
           mMember <- liftIO $ DB.Member.emailToMMember conn (L.unpack email)
@@ -102,9 +99,9 @@ main = do
             Nothing -> redirect "/login?err=notfound"
             Just member -> do
               succ <- liftIO $ Mail.sendLoginMail conn member
-              case succ of
-                False -> redirect "/login?err=unknown"
-                True -> redirect "/checkemail"
+              if succ
+                then redirect "/checkemail"
+                else redirect "/login?err=unknown"
     get "/logout" $ do
       deleteCookie "token"
       redirect "/"
@@ -132,9 +129,9 @@ main = do
           redirect "/settings"
         _ -> redirect "/settings?err=unknown"
       redirect "/settings"
-    post "/subscribe" $ do
+    post "/subscribe" $
       setUnsubscribed conn False
-    post "/unsubscribe" $ do
+    post "/unsubscribe" $
       setUnsubscribed conn True
     get "/signup" $ do
       req <- request
@@ -143,11 +140,11 @@ main = do
         Just _ -> redirect "/"
         Nothing -> do
           ps <- params
-          html $ Pages.signup $ (liftM L.unpack) $ getParam "err" ps
+          html $ Pages.signup $ liftM L.unpack $ getParam "err" ps
     post "/signup" $ do
       req <- request
       ps <- params
-      case (getParam "email" ps) of
+      case getParam "email" ps of
         Nothing -> redirect "/"
         Just email -> do
           mMember <- liftIO $ DB.Member.newMember conn (L.unpack email)
@@ -170,9 +167,9 @@ main = do
       ps <- params
       fs <- files
       liftIO $ putStrLn "-------------------------"
-      liftIO $ putStrLn (show ps)
+      liftIO $ print ps
       liftIO $ putStrLn ""
-      liftIO $ putStrLn (show fs)
+      liftIO $ print fs
       liftIO $ putStrLn ""
       let
         mEmail = getParam "recipient" ps
@@ -180,9 +177,9 @@ main = do
         mSubject = getParam "subject" ps
       case (mEmail, mText, mSubject) of
         (Just email, Just text, Just subject) -> do
-          liftIO $ putStrLn $ (show email) ++ " " ++ (show text) ++ " " ++ (show subject)
+          liftIO $ putStrLn $ show email ++ " " ++ show text ++ " " ++ show subject
           success <- liftIO $ Post.addToPost conn (L.unpack email) (L.unpack text) fs
-          case success of
-            False -> status status400
-            True -> html ""
+          if success
+            then html ""
+            else status status400
         _ -> status status400

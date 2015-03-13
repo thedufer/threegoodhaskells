@@ -11,16 +11,16 @@ import Data.Time.Clock
 insertLoginCode :: Connection -> LoginCode -> IO (Maybe LoginCode)
 insertLoginCode conn (LoginCode _ code expiration idMember) = do
   curTime <- getCurrentTime
-  (liftM rowsToMLoginCode) $ query conn "INSERT INTO \"LoginCodes\" (code, expires, \"MemberId\", \"createdAt\", \"updatedAt\") VALUES (?, ?, ?, ?, ?) RETURNING id, code, expires, \"MemberId\"" (code, expiration, idMember, curTime, curTime)
+  liftM rowsToMLoginCode $ query conn "INSERT INTO \"LoginCodes\" (code, expires, \"MemberId\", \"createdAt\", \"updatedAt\") VALUES (?, ?, ?, ?, ?) RETURNING id, code, expires, \"MemberId\"" (code, expiration, idMember, curTime, curTime)
 
 rowToLoginCode :: (LoginCodeId, Code, UTCTimestamp, MemberId) -> LoginCode
 rowToLoginCode (id, code, expires, idMember) = LoginCode id code expires idMember
 
 rowsToMLoginCode :: [(LoginCodeId, Code, UTCTimestamp, MemberId)] -> Maybe LoginCode
-rowsToMLoginCode = (liftM rowToLoginCode) . listToMaybe
+rowsToMLoginCode = liftM rowToLoginCode . listToMaybe
 
 codeToMLoginCode :: Connection -> Code -> MemberId -> IO (Maybe LoginCode)
 codeToMLoginCode conn code idMember = do
   curTime <- getCurrentTime
   xs <- query conn "SELECT id, code, expires, \"MemberId\" FROM \"LoginCodes\" WHERE code = ? AND \"MemberId\" = ? AND expires > ?;" (code, idMember, curTime)
-  return (rowsToMLoginCode xs)
+  return $ rowsToMLoginCode xs

@@ -18,13 +18,13 @@ baseUrl = "https://api.mailgun.net/v2"
 makeParts :: Text -> Mail -> IO [Part]
 makeParts to mail = do
   mailLBS <- renderMail' mail
-  messagePart <- return (partLBS "message" mailLBS)
-  return [(partBS "to" (encodeUtf8 to)), messagePart { partFilename = (Just "message"), partContentType = (Just defaultMimeType) }]
+  let messagePart = partLBS "message" mailLBS
+  return [partBS "to" (encodeUtf8 to), messagePart { partFilename = Just "message", partContentType = Just defaultMimeType }]
 
 sendMessage :: (MonadIO m, MonadBaseControl IO m, MonadThrow m) =>
                 String -> String -> String -> Mail -> m (Response LBS.ByteString)
-sendMessage domain apiKey to mail = do
-  withManager $ \manager -> do
+sendMessage domain apiKey to mail =
+  withManager $ \manager ->
     sendWith manager domain apiKey to mail
 
 sendWith :: (MonadIO m, MonadBaseControl IO m, MonadThrow m) =>
@@ -34,6 +34,4 @@ sendWith manager domain apiKey to mail = do
   let authReq = applyBasicAuth "api" (BS.pack apiKey) initReq
       postReq = authReq { method = "POST" }
   parts <- liftIO $ makeParts (pack to) mail
-  res <- flip httpLbs manager =<<
-    (formDataBody parts postReq)
-  return res
+  flip httpLbs manager =<< formDataBody parts postReq

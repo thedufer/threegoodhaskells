@@ -9,14 +9,13 @@ import Util (maybeRead)
 
 import qualified Data.Text
 import Control.Monad (liftM)
-import Web.Cookie (CookiesText, parseCookiesText)
+import Web.Cookie (CookiesText, parseCookiesText, SetCookie)
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
 import Network.Wai
 import Data.List (find)
 import Data.Time.Clock (getCurrentTime, addUTCTime)
 import Web.Scotty.Cookie (makeSimpleCookie)
-import Web.Cookie (SetCookie)
 
 doubleBind :: (Monad m) => (a -> m (Maybe b)) -> Maybe a -> m (Maybe b)
 doubleBind f Nothing = return Nothing
@@ -25,18 +24,18 @@ doubleBind f (Just x) = f x
 loadSession :: Connection -> Request -> IO (Maybe Member)
 loadSession conn req = do
   mToken <- doubleBind (uncurry (idTokenToMToken conn)) (reqToMTokenTuple req)
-  doubleBind (idToMMember conn) ((liftM tokenToMemberId) mToken)
+  doubleBind (idToMMember conn) (liftM tokenToMemberId mToken)
 
 reqToCookies :: Request -> CookiesText
-reqToCookies req = case (find ((== "Cookie") . fst) (requestHeaders req)) of
+reqToCookies req = case find ((== "Cookie") . fst) (requestHeaders req) of
   Nothing -> []
   Just header -> parseCookiesText $ snd header
 
 cookiesToMTokenCookie :: CookiesText -> Maybe Data.Text.Text
-cookiesToMTokenCookie = (liftM snd) . (find ((== "token") . fst))
+cookiesToMTokenCookie = liftM snd . find ((== "token") . fst)
 
 tokenCookieToMTokenTuple :: Data.Text.Text -> Maybe (Data.Text.Text, Data.Text.Text)
-tokenCookieToMTokenTuple tc = case (Data.Text.splitOn "-" tc) of
+tokenCookieToMTokenTuple tc = case Data.Text.splitOn "-" tc of
   [id, token] -> Just (id, token)
   _ -> Nothing
 
@@ -46,7 +45,7 @@ reqToMStringTokenTuple = (tokenCookieToMTokenTuple =<<) . cookiesToMTokenCookie 
 stringTokenTupleToMTokenTuple :: (Data.Text.Text, Data.Text.Text) -> Maybe (MemberId, String)
 stringTokenTupleToMTokenTuple (a, b) = do
   id <- maybeRead $ Data.Text.unpack a
-  token <- return $ Data.Text.unpack b
+  let token = Data.Text.unpack b
   return (id, token)
 
 reqToMTokenTuple :: Request -> Maybe (MemberId, String)
@@ -56,7 +55,7 @@ makeLoginCode :: Connection -> MemberId -> IO (Maybe LoginCode)
 makeLoginCode conn idMember = do
   code <- RandomStrings.generateCode
   curTime <- getCurrentTime
-  expiration <- return $ addUTCTime (60 * 60 * 24) curTime
+  let expiration = addUTCTime (60 * 60 * 24) curTime
   insertLoginCode conn (LoginCode undefined code (Finite expiration) idMember)
 
 makeToken :: Connection -> MemberId -> IO (Maybe Token)

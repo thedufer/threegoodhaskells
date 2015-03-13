@@ -18,17 +18,29 @@ import qualified Mailgun as MG
 
 sendMessage :: String -> Mail -> IO Bool
 sendMessage to mail = catchIOError
-  ((MG.sendMessage Settings.domain Settings.mailgunKey to mail) >> (return True))
+  (MG.sendMessage Settings.domain Settings.mailgunKey to mail >> return True)
   (\x -> return False)
 
 makeFromEmail :: PostId -> PostToken -> Address
-makeFromEmail idPost postToken = Address (Just "Three Good Things") (Text.pack ("post+" ++ (show idPost) ++ "+" ++ postToken ++ "@" ++ Settings.domain))
+makeFromEmail idPost postToken = Address (Just "Three Good Things") (Text.pack ("post+" ++ show idPost ++ "+" ++ postToken ++ "@" ++ Settings.domain))
 
 doNotReplyEmail :: Address
 doNotReplyEmail = Address (Just "Three Good Things") (Text.pack ("do-not-reply@" ++ Settings.domain))
 
 addressToString :: Address -> String
-addressToString address = (Text.unpack $ fromJust $ addressName address) ++ " <" ++ (Text.unpack $ addressEmail address) ++ ">"
+addressToString address = Text.unpack (fromJust $ addressName address) ++ " <" ++ Text.unpack (addressEmail address) ++ ">"
+
+sendMail :: Email -> String -> Maybe String -> Text.Text -> IO Bool
+sendMail to subject mReplyTo html =
+  let from = doNotReplyEmail
+      toAddress = Address Nothing (Text.pack to)
+      cc = []
+      bcc = []
+      headers = case mReplyTo of
+                  Nothing -> [("Subject", Text.pack subject)]
+                  Just replyTo -> [("Reply-To", Text.pack replyTo), ("Subject", Text.pack subject)]
+      parts = [Part "text/html" QuotedPrintableText Nothing [] (LTE.encodeUtf8 $ TL.fromStrict html)]
+  in sendMessage to $ Mail from [toAddress] cc bcc headers [parts]
 
 sendFirstPostMail :: Connection -> Member -> PostId -> PostToken -> String -> IO Bool
 sendFirstPostMail conn member idPost postToken day = do
@@ -36,18 +48,11 @@ sendFirstPostMail conn member idPost postToken day = do
   case mLoginCode of
     Nothing -> return False
     Just loginCode ->
-      let from = doNotReplyEmail
-          to = memberToEmail member
-          toAddress = Address Nothing (Text.pack to)
-          cc = []
-          bcc = []
-          subject = "It's " ++ day ++ " - What are your 3 Good Things?"
-          replyToAddress = makeFromEmail idPost postToken
-          replyTo = addressToString replyToAddress
-          headers = [("Reply-To", Text.pack replyTo), ("Subject", Text.pack subject)]
-          html = TL.toStrict $ TM.firstPost (memberToId member) (loginCodeToCode loginCode)
-          parts = [Part "text/html" QuotedPrintableText Nothing [] (LTE.encodeUtf8 $ TL.fromStrict html)]
-      in sendMessage to $ Mail from [toAddress] cc bcc headers [parts]
+      sendMail
+        (memberToEmail member) 
+        ("It's " ++ day ++ " - What are your 3 Good Things?")
+        (Just $ addressToString $ makeFromEmail idPost postToken)
+        (TL.toStrict $ TM.firstPost (memberToId member) (loginCodeToCode loginCode))
 
 sendFirstPostResponseMail :: Connection -> Member -> PostId -> PostToken -> String -> IO Bool
 sendFirstPostResponseMail conn member idPost postToken oldSubject = do
@@ -55,18 +60,11 @@ sendFirstPostResponseMail conn member idPost postToken oldSubject = do
   case mLoginCode of
     Nothing -> return False
     Just loginCode ->
-      let from = doNotReplyEmail
-          to = memberToEmail member
-          toAddress = Address Nothing (Text.pack to)
-          cc = []
-          bcc = []
-          subject = "Re: " ++ oldSubject
-          replyToAddress = makeFromEmail idPost postToken
-          replyTo = addressToString replyToAddress
-          headers = [("Reply-To", Text.pack replyTo), ("Subject", Text.pack subject)]
-          html = TL.toStrict $ TM.firstPostResponse (memberToId member) (loginCodeToCode loginCode)
-          parts = [Part "text/html" QuotedPrintableText Nothing [] (LTE.encodeUtf8 $ TL.fromStrict html)]
-      in sendMessage to $ Mail from [toAddress] cc bcc headers [parts]
+      sendMail
+        (memberToEmail member)
+        ("Re: " ++ oldSubject)
+        (Just $ addressToString $ makeFromEmail idPost postToken)
+        (TL.toStrict $ TM.firstPostResponse (memberToId member) (loginCodeToCode loginCode))
 
 sendOtherPostMail :: Connection -> Member -> PostId -> PostToken -> String -> IO Bool
 sendOtherPostMail conn member idPost postToken day = do
@@ -74,18 +72,11 @@ sendOtherPostMail conn member idPost postToken day = do
   case mLoginCode of
     Nothing -> return False
     Just loginCode ->
-      let from = doNotReplyEmail
-          to = memberToEmail member
-          toAddress = Address Nothing (Text.pack to)
-          cc = []
-          bcc = []
-          subject = "It's " ++ day ++ " - What are your 3 Good Things?"
-          replyToAddress = makeFromEmail idPost postToken
-          replyTo = addressToString replyToAddress
-          headers = [("Reply-To", Text.pack replyTo), ("Subject", Text.pack subject)]
-          html = TL.toStrict $ TM.otherPost (memberToId member) (loginCodeToCode loginCode)
-          parts = [Part "text/html" QuotedPrintableText Nothing [] (LTE.encodeUtf8 $ TL.fromStrict html)]
-      in sendMessage to $ Mail from [toAddress] cc bcc headers [parts]
+      sendMail
+        (memberToEmail member)
+        ("It's " ++ day ++ " - What are your 3 Good Things?")
+        (Just $ addressToString $ makeFromEmail idPost postToken)
+        (TL.toStrict $ TM.otherPost (memberToId member) (loginCodeToCode loginCode))
 
 sendLoginMail :: Connection -> Member -> IO Bool
 sendLoginMail conn member = do
@@ -93,13 +84,8 @@ sendLoginMail conn member = do
   case mLoginCode of
     Nothing -> return False
     Just loginCode ->
-      let from = doNotReplyEmail
-          to = memberToEmail member
-          toAddress = Address Nothing (Text.pack to)
-          cc = []
-          bcc = []
-          subject = "Three Good Things Login Link"
-          headers = [("Subject", Text.pack subject)]
-          html = TL.toStrict $ TM.login (memberToId member) (loginCodeToCode loginCode)
-          parts = [Part "text/html" QuotedPrintableText Nothing [] (LTE.encodeUtf8 $ TL.fromStrict html)]
-      in sendMessage to $ Mail from [toAddress] cc bcc headers [parts]
+      sendMail
+        (memberToEmail member)
+        "Three Good Things Login Link"
+        Nothing
+        (TL.toStrict $ TM.login (memberToId member) (loginCodeToCode loginCode))

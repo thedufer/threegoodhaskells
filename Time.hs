@@ -21,7 +21,7 @@ currentPostDate = do
 currentSendTime :: IO SendTime
 currentSendTime = do
   curTime <- getCurrentTime
-  return $ floor $ ((utctDayTime curTime) / 60)
+  return $ floor $ utctDayTime curTime / 60
 
 sendTimeToNextEmailDate :: SendTime -> IO UTCTime
 sendTimeToNextEmailDate st = do

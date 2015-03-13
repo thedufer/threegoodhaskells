@@ -12,7 +12,7 @@ import Data.Time.Clock
 insertMember :: Connection -> Member -> IO (Maybe Member)
 insertMember conn (Member _ email unsubscribed sendTime nextEmailDate) = do
   curTime <- getCurrentTime
-  (liftM rowsToMMember) $ query conn "INSERT INTO \"Members\" (email, unsubscribed, \"sendTime\", \"nextEmailDate\", \"createdAt\", \"updatedAt\") VALUES (?, ?, ?, ?, ?, ?) RETURNING id, email, unsubscribed, \"sendTime\", \"nextEmailDate\";" (email, unsubscribed, sendTime, nextEmailDate, curTime, curTime)
+  liftM rowsToMMember $ query conn "INSERT INTO \"Members\" (email, unsubscribed, \"sendTime\", \"nextEmailDate\", \"createdAt\", \"updatedAt\") VALUES (?, ?, ?, ?, ?, ?) RETURNING id, email, unsubscribed, \"sendTime\", \"nextEmailDate\";" (email, unsubscribed, sendTime, nextEmailDate, curTime, curTime)
 
 newMember :: Connection -> Email -> IO (Maybe Member)
 newMember conn email = do
@@ -24,7 +24,7 @@ rowToMember :: (MemberId, Email, Bool, SendTime, UTCTimestamp) -> Member
 rowToMember (id, email, unsubscribed, sendTime, nextEmailDate) = Member id email unsubscribed sendTime nextEmailDate
 
 rowsToMMember :: [(MemberId, Email, Bool, SendTime, UTCTimestamp)] -> Maybe Member
-rowsToMMember = (liftM rowToMember) . listToMaybe
+rowsToMMember = liftM rowToMember . listToMaybe
 
 idToMMember :: Connection -> MemberId -> IO (Maybe Member)
 idToMMember conn id = do
@@ -36,7 +36,7 @@ emailToMMember conn email = do
   xs <- query conn "SELECT id, email, unsubscribed, \"sendTime\", \"nextEmailDate\" FROM \"Members\" WHERE email = ?;" (Only email)
   return (rowsToMMember xs)
 
-membersNeedEmail :: Connection -> IO ([Member])
+membersNeedEmail :: Connection -> IO [Member]
 membersNeedEmail conn = do
   curTime <- getCurrentTime
   xs <- query conn "SELECT id, email, unsubscribed, \"sendTime\", \"nextEmailDate\" FROM \"Members\" WHERE \"nextEmailDate\" < ?;" (Only curTime)

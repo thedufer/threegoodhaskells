@@ -1,6 +1,7 @@
 module Auth (loadSession, makeLoginCode, makeToken, tokenToCookie) where
 
 import Models
+import DB
 import DB.Member
 import DB.LoginCode
 import DB.Token
@@ -9,8 +10,8 @@ import Util (maybeRead)
 
 import qualified Data.Text
 import Control.Monad (liftM)
+import Control.Monad.Reader (liftIO)
 import Web.Cookie (CookiesText, parseCookiesText, SetCookie)
-import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
 import Network.Wai
 import Data.List (find)
@@ -21,10 +22,10 @@ doubleBind :: (Monad m) => (a -> m (Maybe b)) -> Maybe a -> m (Maybe b)
 doubleBind f Nothing = return Nothing
 doubleBind f (Just x) = f x
 
-loadSession :: Connection -> Request -> IO (Maybe Member)
-loadSession conn req = do
-  mToken <- doubleBind (uncurry (idTokenToMToken conn)) (reqToMTokenTuple req)
-  doubleBind (idToMMember conn) (liftM tokenToMemberId mToken)
+loadSession :: Request -> DatabaseM (Maybe Member)
+loadSession req = do
+  mToken <- doubleBind (uncurry (idTokenToMToken)) (reqToMTokenTuple req)
+  doubleBind idToMMember (liftM tokenToMemberId mToken)
 
 reqToCookies :: Request -> CookiesText
 reqToCookies req = case find ((== "Cookie") . fst) (requestHeaders req) of
@@ -51,17 +52,17 @@ stringTokenTupleToMTokenTuple (a, b) = do
 reqToMTokenTuple :: Request -> Maybe (MemberId, String)
 reqToMTokenTuple = (stringTokenTupleToMTokenTuple =<<) . reqToMStringTokenTuple
 
-makeLoginCode :: Connection -> MemberId -> IO (Maybe LoginCode)
-makeLoginCode conn idMember = do
-  code <- RandomStrings.generateCode
-  curTime <- getCurrentTime
+makeLoginCode :: MemberId -> DatabaseM (Maybe LoginCode)
+makeLoginCode idMember = do
+  code <- liftIO RandomStrings.generateCode
+  curTime <- liftIO getCurrentTime
   let expiration = addUTCTime (60 * 60 * 24) curTime
-  insertLoginCode conn (LoginCode undefined code (Finite expiration) idMember)
+  insertLoginCode (LoginCode undefined code (Finite expiration) idMember)
 
-makeToken :: Connection -> MemberId -> IO (Maybe Token)
-makeToken conn idMember = do
-  code <- RandomStrings.generateCode
-  insertToken conn (Token undefined code idMember)
+makeToken :: MemberId -> DatabaseM (Maybe Token)
+makeToken idMember = do
+  code <- liftIO RandomStrings.generateCode
+  insertToken (Token undefined code idMember)
 
 tokenToCookie :: Token -> SetCookie
 tokenToCookie (Token _ code idMember) = makeSimpleCookie "token" $ Data.Text.pack (show idMember ++ "-" ++ code)

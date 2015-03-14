@@ -1,10 +1,11 @@
 module MailTask (taskForever) where
 
-import Database.PostgreSQL.Simple (Connection)
 import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
 import Control.Monad (void, forever)
+import Control.Monad.Reader (liftIO)
 import Control.Concurrent (threadDelay)
 
+import DB
 import qualified DB.Member
 import qualified DB.Post
 import Models
@@ -12,32 +13,32 @@ import qualified Time
 import qualified Mail
 import qualified Auth
 
-taskForever :: Connection -> IO ()
-taskForever conn = void $ forever $ do
-  task conn
-  threadDelay (10 * 1000 * 1000)
+taskForever :: DatabaseM ()
+taskForever = void $ forever $ do
+  task
+  liftIO $ threadDelay (10 * 1000 * 1000)
 
-task :: Connection -> IO ()
-task conn = do
-  members <- DB.Member.membersNeedEmail conn
-  print $ length members
-  mapM_ (taskForMember conn) members
+task :: DatabaseM ()
+task = do
+  members <- DB.Member.membersNeedEmail
+  liftIO $ print $ length members
+  mapM_ taskForMember members
   return ()
 
-taskForMember :: Connection -> Member -> IO ()
-taskForMember conn member = do
-  mailMember conn member
-  DB.Member.bumpNextEmailDate conn member
+taskForMember :: Member -> DatabaseM ()
+taskForMember member = do
+  mailMember member
+  DB.Member.bumpNextEmailDate member
   return ()
 
-mailMember :: Connection -> Member -> IO Bool
-mailMember conn member = do
-  mPost <- DB.Post.newPost conn member
+mailMember :: Member -> DatabaseM Bool
+mailMember member = do
+  mPost <- DB.Post.newPost member
   case mPost of
     Just (Post idPost _ (Finite date) postToken _) -> do
-      mToken <- Auth.makeToken conn (memberToId member)
+      mToken <- Auth.makeToken (memberToId member)
       case mToken of
         Just token ->
-          Mail.sendOtherPostMail conn member idPost postToken (Time.formatPostDate date)
+          Mail.sendOtherPostMail member idPost postToken (Time.formatPostDate date)
         _ -> return False
     _ -> return False

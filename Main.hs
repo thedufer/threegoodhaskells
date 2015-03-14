@@ -1,8 +1,13 @@
 import Web.Scotty
 import Network.Wai
 import Database.PostgreSQL.Simple (connectPostgreSQL, Connection)
+import Control.Monad (liftM)
 import Control.Monad.Trans (liftIO)
+import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Reader (runReaderT)
 import qualified Data.ByteString.Char8 as C8
+import Data.List (find)
+import qualified Data.Text.Lazy as L
 import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
 import Web.Scotty.Cookie (deleteCookie, setCookie)
 import Network.HTTP.Types.Status (status400)
@@ -19,10 +24,7 @@ import qualified Time
 import qualified Post
 import qualified MailTask
 import Util (maybeRead)
-
-import Data.List (find)
-import qualified Data.Text.Lazy as L
-import Control.Monad (liftM)
+import DB
 
 getParam :: L.Text -> [Param] -> Maybe L.Text
 getParam t = liftM snd . find (\x -> fst x == t)
@@ -30,27 +32,30 @@ getParam t = liftM snd . find (\x -> fst x == t)
 getIntParam :: L.Text -> [Param] -> Maybe Int
 getIntParam t ps = maybeRead =<< liftM L.unpack (getParam t ps)
 
+liftDB :: MonadIO m => Connection -> DatabaseM a -> m a
+liftDB conn inner = liftIO $ (runReaderT inner) conn
+
 setUnsubscribed :: Connection -> Bool -> ActionM ()
 setUnsubscribed conn unsubscribe = do
   req <- request
-  mMember <- liftIO $ Auth.loadSession conn req
+  mMember <- liftDB conn $ Auth.loadSession req
   case mMember of 
     Nothing -> redirect "/settings?err=unknown"
     Just member -> do
-      liftIO $ DB.Member.setUnsubscribed conn (Models.memberToId member) unsubscribe
+      liftDB conn $ DB.Member.setUnsubscribed (Models.memberToId member) unsubscribe
       redirect "/settings"
 
 doLogin :: Connection -> Models.MemberId -> Models.Code -> L.Text -> ActionM ()
 doLogin conn idMember code redirURL = do
-  mMember <- liftIO $ DB.Member.idToMMember conn idMember
+  mMember <- liftDB conn $ DB.Member.idToMMember idMember
   case mMember of
     Nothing -> redirect "/login?err=badcode"
     Just member -> do
-      mLoginCode <- liftIO $ DB.LoginCode.codeToMLoginCode conn code idMember
+      mLoginCode <- liftDB conn $ DB.LoginCode.codeToMLoginCode code idMember
       case mLoginCode of
         Nothing -> redirect "/login?err=badcode"
         Just _ -> do
-          mToken <- liftIO $ Auth.makeToken conn (Models.memberToId member)
+          mToken <- liftDB conn $ Auth.makeToken (Models.memberToId member)
           case mToken of
             Just token -> do
               setCookie (Auth.tokenToCookie token)
@@ -60,17 +65,17 @@ doLogin conn idMember code redirURL = do
 main :: IO ()
 main = do
   conn <- connectPostgreSQL "dbname='threegoodhaskells'"
-  forkIO $ MailTask.taskForever conn
+  forkIO $ liftDB conn MailTask.taskForever
   scotty 3000 $ do
     get "/" $ do
       req <- request
-      mMember <- liftIO $ Auth.loadSession conn req
+      mMember <- liftDB conn $ Auth.loadSession req
       case mMember of
         Nothing -> html Pages.landing
         Just _ -> redirect "/posts"
     get "/login" $ do
       req <- request
-      mMember <- liftIO $ Auth.loadSession conn req
+      mMember <- liftDB conn $ Auth.loadSession req
       case mMember of
         Nothing -> do
           ps <- params
@@ -94,11 +99,11 @@ main = do
       case getParam "email" ps of
         Nothing -> redirect "/"
         Just email -> do
-          mMember <- liftIO $ DB.Member.emailToMMember conn (L.unpack email)
+          mMember <- liftDB conn $ DB.Member.emailToMMember (L.unpack email)
           case mMember of
             Nothing -> redirect "/login?err=notfound"
             Just member -> do
-              succ <- liftIO $ Mail.sendLoginMail conn member
+              succ <- liftDB conn $ Mail.sendLoginMail member
               if succ
                 then redirect "/checkemail"
                 else redirect "/login?err=unknown"
@@ -107,25 +112,25 @@ main = do
       redirect "/"
     get "/posts" $ do
       req <- request
-      mMember <- liftIO $ Auth.loadSession conn req
+      mMember <- liftDB conn $ Auth.loadSession req
       case mMember of
         Nothing -> redirect "/"
         Just member -> do
-          posts <- liftIO $ DB.Post.memberToPosts conn member
+          posts <- liftDB conn $ DB.Post.memberToPosts member
           html $ Pages.posts posts
     get "/settings" $ do
       req <- request
-      mMember <- liftIO $ Auth.loadSession conn req
+      mMember <- liftDB conn $ Auth.loadSession req
       case mMember of
         Nothing -> redirect "/"
         Just member -> html $ Pages.settings member
     post "/time" $ do
       req <- request
       ps <- params
-      mMember <- liftIO $ Auth.loadSession conn req
+      mMember <- liftDB conn $ Auth.loadSession req
       case (mMember, getIntParam "sendTime" ps) of
         (Just member, Just sendTime) -> do
-          liftIO $ DB.Member.setSendTime conn (Models.memberToId member) sendTime
+          liftDB conn $ DB.Member.setSendTime (Models.memberToId member) sendTime
           redirect "/settings"
         _ -> redirect "/settings?err=unknown"
       redirect "/settings"
@@ -135,7 +140,7 @@ main = do
       setUnsubscribed conn True
     get "/signup" $ do
       req <- request
-      mMember <- liftIO $ Auth.loadSession conn req
+      mMember <- liftDB conn $ Auth.loadSession req
       case mMember of
         Just _ -> redirect "/"
         Nothing -> do
@@ -147,17 +152,17 @@ main = do
       case getParam "email" ps of
         Nothing -> redirect "/"
         Just email -> do
-          mMember <- liftIO $ DB.Member.newMember conn (L.unpack email)
+          mMember <- liftDB conn $ DB.Member.newMember (L.unpack email)
           case mMember of
             Nothing -> redirect "/signup?err=inuse"
             Just member -> do
-              mPost <- liftIO $ DB.Post.newPost conn member
+              mPost <- liftDB conn $ DB.Post.newPost member
               case mPost of
                 Just (Models.Post idPost _ (Finite date) postToken _) -> do
-                  mToken <- liftIO $ Auth.makeToken conn (Models.memberToId member)
+                  mToken <- liftDB conn $ Auth.makeToken (Models.memberToId member)
                   case mToken of
                     Just token -> do
-                      liftIO $ Mail.sendFirstPostMail conn member idPost postToken (Time.formatPostDate date)
+                      liftDB conn $ Mail.sendFirstPostMail member idPost postToken (Time.formatPostDate date)
                       setCookie (Auth.tokenToCookie token)
                       redirect "/"
                     _ -> redirect "/signup?err=unknown"
@@ -178,7 +183,7 @@ main = do
       case (mEmail, mText, mSubject) of
         (Just email, Just text, Just subject) -> do
           liftIO $ putStrLn $ show email ++ " " ++ show text ++ " " ++ show subject
-          success <- liftIO $ Post.addToPost conn (L.unpack email) (L.unpack text) fs
+          success <- liftDB conn $ Post.addToPost (L.unpack email) (L.unpack text) fs
           if success
             then html ""
             else status status400

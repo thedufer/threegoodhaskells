@@ -4,20 +4,21 @@ import qualified Data.ByteString.Lazy.Char8 as LBS
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy.Encoding as LTE
 import qualified Data.Text.Lazy as TL
+import Control.Monad.Reader (liftIO)
 import Network.HTTP.Conduit (Response)
-import Database.PostgreSQL.Simple (Connection)
 import Network.Mail.Mime (Mail(..), Address(..), Alternatives(..), Part(..), Encoding(..))
 import Data.Maybe (fromJust)
 import System.IO.Error (catchIOError)
 
 import Models
+import DB
 import qualified Templates.Mail as TM
 import qualified Auth
 import qualified Settings
 import qualified Mailgun as MG
 
-sendMessage :: String -> Mail -> IO Bool
-sendMessage to mail = catchIOError
+sendMessage :: String -> Mail -> DatabaseM Bool
+sendMessage to mail = liftIO $ catchIOError
   (MG.sendMessage Settings.domain Settings.mailgunKey to mail >> return True)
   (\x -> return False)
 
@@ -30,7 +31,7 @@ doNotReplyEmail = Address (Just "Three Good Things") (Text.pack ("do-not-reply@"
 addressToString :: Address -> String
 addressToString address = Text.unpack (fromJust $ addressName address) ++ " <" ++ Text.unpack (addressEmail address) ++ ">"
 
-sendMail :: Email -> String -> Maybe String -> Text.Text -> IO Bool
+sendMail :: Email -> String -> Maybe String -> Text.Text -> DatabaseM Bool
 sendMail to subject mReplyTo html =
   let from = doNotReplyEmail
       toAddress = Address Nothing (Text.pack to)
@@ -42,9 +43,9 @@ sendMail to subject mReplyTo html =
       parts = [Part "text/html" QuotedPrintableText Nothing [] (LTE.encodeUtf8 $ TL.fromStrict html)]
   in sendMessage to $ Mail from [toAddress] cc bcc headers [parts]
 
-sendFirstPostMail :: Connection -> Member -> PostId -> PostToken -> String -> IO Bool
-sendFirstPostMail conn member idPost postToken day = do
-  mLoginCode <- Auth.makeLoginCode conn (memberToId member)
+sendFirstPostMail :: Member -> PostId -> PostToken -> String -> DatabaseM Bool
+sendFirstPostMail member idPost postToken day = do
+  mLoginCode <- Auth.makeLoginCode (memberToId member)
   case mLoginCode of
     Nothing -> return False
     Just loginCode ->
@@ -54,9 +55,9 @@ sendFirstPostMail conn member idPost postToken day = do
         (Just $ addressToString $ makeFromEmail idPost postToken)
         (TL.toStrict $ TM.firstPost (memberToId member) (loginCodeToCode loginCode))
 
-sendFirstPostResponseMail :: Connection -> Member -> PostId -> PostToken -> String -> IO Bool
-sendFirstPostResponseMail conn member idPost postToken oldSubject = do
-  mLoginCode <- Auth.makeLoginCode conn (memberToId member)
+sendFirstPostResponseMail :: Member -> PostId -> PostToken -> String -> DatabaseM Bool
+sendFirstPostResponseMail member idPost postToken oldSubject = do
+  mLoginCode <- Auth.makeLoginCode (memberToId member)
   case mLoginCode of
     Nothing -> return False
     Just loginCode ->
@@ -66,9 +67,9 @@ sendFirstPostResponseMail conn member idPost postToken oldSubject = do
         (Just $ addressToString $ makeFromEmail idPost postToken)
         (TL.toStrict $ TM.firstPostResponse (memberToId member) (loginCodeToCode loginCode))
 
-sendOtherPostMail :: Connection -> Member -> PostId -> PostToken -> String -> IO Bool
-sendOtherPostMail conn member idPost postToken day = do
-  mLoginCode <- Auth.makeLoginCode conn (memberToId member)
+sendOtherPostMail :: Member -> PostId -> PostToken -> String -> DatabaseM Bool
+sendOtherPostMail member idPost postToken day = do
+  mLoginCode <- Auth.makeLoginCode (memberToId member)
   case mLoginCode of
     Nothing -> return False
     Just loginCode ->
@@ -78,9 +79,9 @@ sendOtherPostMail conn member idPost postToken day = do
         (Just $ addressToString $ makeFromEmail idPost postToken)
         (TL.toStrict $ TM.otherPost (memberToId member) (loginCodeToCode loginCode))
 
-sendLoginMail :: Connection -> Member -> IO Bool
-sendLoginMail conn member = do
-  mLoginCode <- Auth.makeLoginCode conn (memberToId member)
+sendLoginMail :: Member -> DatabaseM Bool
+sendLoginMail member = do
+  mLoginCode <- Auth.makeLoginCode (memberToId member)
   case mLoginCode of
     Nothing -> return False
     Just loginCode ->

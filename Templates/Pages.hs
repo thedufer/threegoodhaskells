@@ -72,8 +72,8 @@ header lis = div_ [class_ "header"] $ do
 headPlus :: Html () -> Html ()
 headPlus extra = head_ $ do
   script_ [src_ "//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"] ("" :: Text)
-  link_ [rel_ "stylesheet", href_ "http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"]
-  link_ [rel_ "stylesheet", href_ "http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css"]
+  link_ [rel_ "stylesheet", href_ "//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"]
+  link_ [rel_ "stylesheet", href_ "//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css"]
   script_ [src_ "//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"] ("" :: Text)
   style_ (Data.Text.unlines [
     ".container {",

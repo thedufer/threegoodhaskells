@@ -23,6 +23,7 @@ import qualified Mail
 import qualified Time
 import qualified Post
 import qualified MailTask
+import qualified Settings
 import Util (maybeRead)
 import DB
 
@@ -66,7 +67,7 @@ main :: IO ()
 main = do
   conn <- connectPostgreSQL "dbname='threegoodhaskells'"
   forkIO $ liftDB conn MailTask.taskForever
-  scotty 3000 $ do
+  scotty Settings.port $ do
     get "/" $ do
       req <- request
       mMember <- liftDB conn $ Auth.loadSession req

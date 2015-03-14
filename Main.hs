@@ -65,7 +65,7 @@ doLogin conn idMember code redirURL = do
 
 main :: IO ()
 main = do
-  conn <- connectPostgreSQL "dbname='threegoodhaskells'"
+  conn <- connectPostgreSQL Settings.dbConnectionString 
   forkIO $ liftDB conn MailTask.taskForever
   scotty Settings.port $ do
     get "/" $ do

@@ -41,7 +41,7 @@ emailToMMember email = do
 membersNeedEmail :: DatabaseM [Member]
 membersNeedEmail = do
   curTime <- liftIO getCurrentTime
-  xs <- query "SELECT id, email, unsubscribed, \"sendTime\", \"nextEmailDate\" FROM \"Members\" WHERE \"nextEmailDate\" < ?;" (Only curTime)
+  xs <- query "SELECT id, email, unsubscribed, \"sendTime\", \"nextEmailDate\" FROM \"Members\" WHERE \"nextEmailDate\" < ? AND unsubscribed = FALSE;" (Only curTime)
   return $ map rowToMember xs
 
 bumpNextEmailDate :: Member -> DatabaseM ()

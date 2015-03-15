@@ -71,6 +71,7 @@ executable threegoodhaskells
                      , cookie
                      , mtl
                      , time
+                     , time-lens
                      , bytestring
                      , http-conduit
                      , http-client

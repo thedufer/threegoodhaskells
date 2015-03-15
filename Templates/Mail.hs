@@ -36,10 +36,21 @@ firstPostResponse idMember code = renderText $ do
   "."
   footer idMember code
 
-otherPost :: MemberId -> Code -> TL.Text
-otherPost idMember code = renderText $ do
+otherPost :: MemberId -> Code -> Maybe (String, String) -> TL.Text
+otherPost idMember code mPrevPostTuple = renderText $ do
   "Just reply to this email with your Three Good Things."
   br_ []
+  case mPrevPostTuple of
+    Just (sDate, text) -> do
+      br_ []
+      br_ []
+      br_ []
+      fromString $ sDate ++ " you wrote:"
+      br_ []
+      br_ []
+      fromString text
+      br_ []
+    Nothing -> ""
   footer idMember code
 
 login :: MemberId -> Code -> TL.Text

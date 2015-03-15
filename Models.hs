@@ -37,3 +37,6 @@ tokenToMemberId (Token _ _ id) = id
 
 postToMemberId :: Post -> MemberId
 postToMemberId (Post _ _ _ _ id) = id
+
+postToMString :: Post -> Maybe String
+postToMString (Post _ mString _ _ _) = mString

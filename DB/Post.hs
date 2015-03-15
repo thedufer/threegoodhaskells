@@ -1,4 +1,4 @@
-module DB.Post (newPost, memberToPosts, addToPost) where
+module DB.Post (newPost, memberToPosts, addToPost, dateToPost) where
 
 import Models
 import DB

@@ -67,8 +67,8 @@ sendFirstPostResponseMail member idPost postToken oldSubject = do
         (Just $ addressToString $ makeFromEmail idPost postToken)
         (TL.toStrict $ TM.firstPostResponse (memberToId member) (loginCodeToCode loginCode))
 
-sendOtherPostMail :: Member -> PostId -> PostToken -> String -> DatabaseM Bool
-sendOtherPostMail member idPost postToken day = do
+sendOtherPostMail :: Member -> PostId -> PostToken -> String -> Maybe (String, String) -> DatabaseM Bool
+sendOtherPostMail member idPost postToken day mPrevPostTuple = do
   mLoginCode <- Auth.makeLoginCode (memberToId member)
   case mLoginCode of
     Nothing -> return False
@@ -77,7 +77,7 @@ sendOtherPostMail member idPost postToken day = do
         (memberToEmail member)
         ("It's " ++ day ++ " - What are your 3 Good Things?")
         (Just $ addressToString $ makeFromEmail idPost postToken)
-        (TL.toStrict $ TM.otherPost (memberToId member) (loginCodeToCode loginCode))
+        (TL.toStrict $ TM.otherPost (memberToId member) (loginCodeToCode loginCode) mPrevPostTuple)
 
 sendLoginMail :: Member -> DatabaseM Bool
 sendLoginMail member = do

@@ -165,7 +165,7 @@ main = do
                     Just token -> do
                       liftDB conn $ Mail.sendFirstPostMail member idPost postToken (Time.formatPostDate date)
                       setCookie (Auth.tokenToCookie token)
-                      redirect "/"
+                      redirect "/settings"
                     _ -> redirect "/signup?err=unknown"
                 _ -> redirect "/signup?err=unknown"
     post "/message" $ do

@@ -34,7 +34,7 @@ getIntParam :: L.Text -> [Param] -> Maybe Int
 getIntParam t ps = maybeRead =<< liftM L.unpack (getParam t ps)
 
 liftDB :: MonadIO m => Connection -> DatabaseM a -> m a
-liftDB conn inner = liftIO $ (runReaderT inner) conn
+liftDB conn inner = liftIO $ runReaderT inner conn
 
 setUnsubscribed :: Connection -> Bool -> ActionM ()
 setUnsubscribed conn unsubscribe = do

@@ -38,7 +38,7 @@ prevPostChoiceToMPrevPostTuple idMember (sTime, modTime) = do
   return $ liftM (\x -> (fullSTime, x)) mString
 
 getMPrevPostTuple :: MemberId -> DatabaseM (Maybe (String, String))
-getMPrevPostTuple idMember = (liftM msum) $ sequence $ map (prevPostChoiceToMPrevPostTuple idMember) (reverse prevPostChoices)
+getMPrevPostTuple idMember = liftM msum $ mapM (prevPostChoiceToMPrevPostTuple idMember) (reverse prevPostChoices)
 
 taskForever :: DatabaseM ()
 taskForever = void $ forever $ do

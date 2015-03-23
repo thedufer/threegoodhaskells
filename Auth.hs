@@ -24,7 +24,7 @@ doubleBind f (Just x) = f x
 
 loadSession :: Request -> DatabaseM (Maybe Member)
 loadSession req = do
-  mToken <- doubleBind (uncurry (idTokenToMToken)) (reqToMTokenTuple req)
+  mToken <- doubleBind (uncurry idTokenToMToken) (reqToMTokenTuple req)
   doubleBind idToMMember (liftM tokenToMemberId mToken)
 
 reqToCookies :: Request -> CookiesText

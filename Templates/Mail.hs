@@ -22,39 +22,37 @@ footer idMember code = do
 
 firstPost :: MemberId -> Code -> TL.Text
 firstPost idMember code = renderText $ do
-  "Just reply to this email with your Three Good Things, and we'll save it for you!"
-  br_ []
-  "Or just write anything.  We'll hold on to whatever it is!"
+  p_ "Just reply to this email with your Three Good Things, and we'll save it for you!"
+  p_ "Or just write anything.  We'll hold on to whatever it is!"
   footer idMember code
 
 firstPostResponse :: MemberId -> Code -> TL.Text
 firstPostResponse idMember code = renderText $ do
-  "Congrats on your writing your first entry!"
-  br_ []
-  "You can check it out "
-  a_ [href_ $ loginLink idMember code "/posts"] "here"
-  "."
+  p_ "Congrats on your writing your first entry!"
+  p_ $ do
+    "You can check it out "
+    a_ [href_ $ loginLink idMember code "/posts"] "here"
+    "."
   footer idMember code
 
 otherPost :: MemberId -> Code -> Maybe (String, String) -> TL.Text
 otherPost idMember code mPrevPostTuple = renderText $ do
-  "Just reply to this email with your Three Good Things."
-  br_ []
+  p_ "Just reply to this email with your Three Good Things."
   case mPrevPostTuple of
     Just (sDate, text) -> do
       br_ []
       br_ []
       br_ []
-      fromString $ sDate ++ " you wrote:"
+      p_ $ fromString $ sDate ++ " you wrote:"
       br_ []
-      br_ []
-      fromString text
+      p_ $ fromString text
       br_ []
     Nothing -> ""
   footer idMember code
 
 login :: MemberId -> Code -> TL.Text
 login idMember code = renderText $ do
-  a_ [href_ $ loginLink idMember code "/posts"] "Click here"
-  " to log in."
+  p_ $ do
+    a_ [href_ $ loginLink idMember code "/posts"] "Click here"
+    " to log in."
   footer idMember code

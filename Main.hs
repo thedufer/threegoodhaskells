@@ -6,6 +6,7 @@ import Control.Monad.Trans (liftIO)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (mapStateT)
+import Control.Monad.Trans.Either
 import qualified Data.ByteString.Char8 as C8
 import Data.List (find)
 import qualified Data.Text.Lazy as L
@@ -74,6 +75,33 @@ home = do
   maybe (html Pages.landing)
         (const $ redirect "/posts")
         mMember
+
+doBoth :: Monad m => (a -> m b) -> EitherT a m a -> m b
+doBoth f = eitherT f f
+
+fromMaybe :: Monad m => Maybe a -> e -> EitherT e m a
+fromMaybe Nothing def = left def
+fromMaybe (Just a) _ = right a
+
+doSignup :: M ()
+doSignup = doBoth redirect $ do
+  let liftDB = lift . lift
+  ps <- lift params
+  email <- fromMaybe (getParam "email" ps) "/"
+
+  mMember <- liftDB $ DB.Member.newMember (L.unpack email)
+  member <- maybe (left "/signup?err=inuse") right mMember
+
+  mPost <- liftDB $ DB.Post.newPost member
+  (Models.Post idPost _ (Finite date) postToken _) <-
+    maybe (left "/signup?err=unknown") right mPost
+
+  mToken <- liftDB $ Auth.makeToken (Models.memberToId member)
+  token <- maybe (left "/signup?err=unknown") right mToken
+
+  liftDB $ Mail.sendFirstPostMail member idPost postToken (Time.formatPostDate date)
+  lift $ setCookie (Auth.tokenToCookie token)
+  return "/settings"
 
 main :: IO ()
 main = do
@@ -152,26 +180,7 @@ main = do
         Nothing -> do
           ps <- params
           html $ Pages.signup $ liftM L.unpack $ getParam "err" ps
-    post "/signup" $ do
-      ps <- params
-      case getParam "email" ps of
-        Nothing -> redirect "/"
-        Just email -> do
-          mMember <- lift $ DB.Member.newMember (L.unpack email)
-          case mMember of
-            Nothing -> redirect "/signup?err=inuse"
-            Just member -> do
-              mPost <- lift $ DB.Post.newPost member
-              case mPost of
-                Just (Models.Post idPost _ (Finite date) postToken _) -> do
-                  mToken <- lift $ Auth.makeToken (Models.memberToId member)
-                  case mToken of
-                    Just token -> do
-                      lift $ Mail.sendFirstPostMail member idPost postToken (Time.formatPostDate date)
-                      setCookie (Auth.tokenToCookie token)
-                      redirect "/settings"
-                    _ -> redirect "/signup?err=unknown"
-                _ -> redirect "/signup?err=unknown"
+    post "/signup" doSignup
     post "/message" $ do
       ps <- params
       fs <- files

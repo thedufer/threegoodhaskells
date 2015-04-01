@@ -83,6 +83,7 @@ executable threegoodhaskells
                      , monad-control
                      , mime-types
                      , attoparsec
+                     , either
 
   default-extensions: OverloadedStrings
                     , FlexibleContexts

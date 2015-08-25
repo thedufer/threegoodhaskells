@@ -4,8 +4,10 @@ import Lucid
 import Data.Text
 import Data.String
 import qualified Data.Text.Lazy as TL
+
 import qualified Settings
 import Models
+import Templates.Util (textToHtml)
 
 loginLink :: MemberId -> Code -> String -> Text
 loginLink idMember code redirect = pack $
@@ -45,7 +47,7 @@ otherPost idMember code mPrevPostTuple = renderText $ do
       br_ []
       p_ $ fromString $ sDate ++ " you wrote:"
       br_ []
-      p_ $ fromString text
+      p_ $ textToHtml text
       br_ []
     Nothing -> ""
   footer idMember code

@@ -8,7 +8,7 @@ import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
 import Control.Monad (void)
 
 import Models
-import Time (formatPostDate)
+import Templates.Util (postToHtml)
 
 signupErrMap :: Maybe String -> Html ()
 signupErrMap (Just "inuse") = p_ [class_ "text-danger"] "That email address is already in use."
@@ -116,12 +116,6 @@ landing = renderText $ html_ $ do
         p_ [class_ "col-xs-4"] "3. You get a collection of daily reflections"
         p_ [class_ "col-xs-12", style_ "padding-top: 12px;"] "All we need is your email address:"
         signupForm
-
-postToHtml :: Post -> Html ()
-postToHtml (Post _ (Just text) (Finite timestamp) _ _) = do
-  h4_ $ toHtml $ formatPostDate timestamp
-  mapM_ (p_ . toHtml) (Data.String.lines text)
-postToHtml _ = void ""
 
 posts :: [Post] -> TL.Text
 posts ps = renderText $ html_ $ do

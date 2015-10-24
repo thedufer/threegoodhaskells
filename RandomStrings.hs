@@ -1,4 +1,4 @@
-module RandomStrings (generateCode, generatePostToken) where
+module RandomStrings (generateCode, generatePostToken, generateHex32) where
 
 import Models
 

@@ -19,6 +19,7 @@ import Data.Functor ((<$>))
 import qualified Templates.Pages as Pages
 import qualified Auth
 import qualified Models
+import qualified DB.Attachment
 import qualified DB.Member
 import qualified DB.Post
 import qualified DB.LoginCode
@@ -151,7 +152,8 @@ main = do
         Nothing -> redirect "/"
         Just member -> do
           posts <- lift $ DB.Post.memberToPosts member
-          html $ Pages.posts posts
+          attachments <- lift $ mapM DB.Attachment.postToAttachments posts
+          html $ Pages.posts $ zip posts attachments
     get "/settings" $ do
       req <- request
       mMember <- lift $ Auth.loadSession req

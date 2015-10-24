@@ -1,4 +1,4 @@
-module MailTask (taskForever, getMPrevPostTuple) where
+module MailTask (taskForever) where
 
 import Database.PostgreSQL.Simple.Time (Unbounded(Finite))
 import Control.Monad (void, forever, liftM, msum)
@@ -8,6 +8,7 @@ import Data.Time.Clock (UTCTime)
 import Data.Time.Lens (modL, day, month, year)
 
 import DB
+import qualified DB.Attachment
 import qualified DB.Member
 import qualified DB.Post
 import Models
@@ -28,16 +29,20 @@ prevPostChoices = [
   , ("One year ago", modL year (subtract 1))
   ]
 
-prevPostChoiceToMPrevPostTuple :: MemberId -> (String, UTCTime -> UTCTime) -> DatabaseM (Maybe (String, String))
+prevPostChoiceToMPrevPostTuple :: MemberId -> (String, UTCTime -> UTCTime) -> DatabaseM (Maybe (String, String, [Attachment]))
 prevPostChoiceToMPrevPostTuple idMember (sTime, modTime) = do
   curDate <- liftIO Time.currentPostDate
   let searchDate = modTime curDate
   mPost <- DB.Post.dateToPost idMember searchDate
   let mString = mPost >>= postToMString
       fullSTime = sTime ++ " on " ++ Time.formatPostDate searchDate
-  return $ liftM (\x -> (fullSTime, x)) mString
+  case (mPost, mString) of
+    (Just post, Just str) -> do
+      as <- DB.Attachment.postToAttachments post
+      return $ Just (fullSTime, str, as)
+    _ -> return Nothing
 
-getMPrevPostTuple :: MemberId -> DatabaseM (Maybe (String, String))
+getMPrevPostTuple :: MemberId -> DatabaseM (Maybe (String, String, [Attachment]))
 getMPrevPostTuple idMember = liftM msum $ mapM (prevPostChoiceToMPrevPostTuple idMember) (reverse prevPostChoices)
 
 taskForever :: DatabaseM ()

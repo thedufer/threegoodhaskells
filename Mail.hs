@@ -67,7 +67,7 @@ sendFirstPostResponseMail member idPost postToken oldSubject = do
         (Just $ addressToString $ makeFromEmail idPost postToken)
         (TL.toStrict $ TM.firstPostResponse (memberToId member) (loginCodeToCode loginCode))
 
-sendOtherPostMail :: Member -> PostId -> PostToken -> String -> Maybe (String, String) -> DatabaseM Bool
+sendOtherPostMail :: Member -> PostId -> PostToken -> String -> Maybe (String, String, [Attachment]) -> DatabaseM Bool
 sendOtherPostMail member idPost postToken day mPrevPostTuple = do
   mLoginCode <- Auth.makeLoginCode (memberToId member)
   case mLoginCode of

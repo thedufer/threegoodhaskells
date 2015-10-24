@@ -20,6 +20,11 @@ type PostId = Id
 type PostToken = String
 data Post = Post PostId (Maybe String) UTCTimestamp PostToken MemberId deriving (Show)
 
+type AttachmentId = Id
+type Url = String
+type AttachmentType = String
+data Attachment = Attachment AttachmentId Url AttachmentType PostId
+
 memberToId :: Member -> MemberId
 memberToId (Member id _ _ _ _) = id
 

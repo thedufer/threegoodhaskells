@@ -4,8 +4,7 @@ import Models
 
 import Database.PostgreSQL.Simple.Time
 import Data.Time.Clock (getCurrentTime, utctDayTime, addUTCTime, UTCTime)
-import System.Locale (defaultTimeLocale)
-import Data.Time.Format (formatTime)
+import Data.Time.Format (formatTime, defaultTimeLocale)
 
 formatPostDate :: UTCTime -> String
 formatPostDate = formatTime defaultTimeLocale "%a %h %e %Y"

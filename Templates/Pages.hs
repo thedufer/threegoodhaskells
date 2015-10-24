@@ -117,14 +117,14 @@ landing = renderText $ html_ $ do
         p_ [class_ "col-xs-12", style_ "padding-top: 12px;"] "All we need is your email address:"
         signupForm
 
-posts :: [Post] -> TL.Text
-posts ps = renderText $ html_ $ do
+posts :: [(Post, [Attachment])] -> TL.Text
+posts ts = renderText $ html_ $ do
   Templates.Pages.head
   body_ $
     div_ [class_ "container"] $ do
       Templates.Pages.header [postsLink True, settingsLink False, logoutLink]
       h3_ "Posts"
-      mapM_ postToHtml ps
+      mapM_ (uncurry postToHtml) ts
 
 settings :: Member -> TL.Text
 settings (Member _ _ unsubscribed sendTime _) = renderText $ html_ $ do

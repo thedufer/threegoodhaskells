@@ -7,7 +7,7 @@ import qualified Data.Text.Lazy as TL
 
 import qualified Settings
 import Models
-import Templates.Util (textToHtml)
+import Templates.Util (textToHtml, attachmentsToHtml)
 
 loginLink :: MemberId -> Code -> String -> Text
 loginLink idMember code redirect = pack $
@@ -37,17 +37,18 @@ firstPostResponse idMember code = renderText $ do
     "."
   footer idMember code
 
-otherPost :: MemberId -> Code -> Maybe (String, String) -> TL.Text
+otherPost :: MemberId -> Code -> Maybe (String, String, [Attachment]) -> TL.Text
 otherPost idMember code mPrevPostTuple = renderText $ do
   p_ "Just reply to this email with your Three Good Things."
   case mPrevPostTuple of
-    Just (sDate, text) -> do
+    Just (sDate, text, as) -> do
       br_ []
       br_ []
       br_ []
       p_ $ fromString $ sDate ++ " you wrote:"
       br_ []
       p_ $ textToHtml text
+      attachmentsToHtml as
       br_ []
     Nothing -> ""
   footer idMember code

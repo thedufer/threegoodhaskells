@@ -54,7 +54,26 @@ executable threegoodhaskells
   main-is:             Main.hs
   
   -- Modules included in this executable, other than Main.
-  -- other-modules:       
+  other-modules:       Auth
+                     , DB
+                     , DB.Attachment
+                     , DB.LoginCode
+                     , DB.Member
+                     , DB.Post
+                     , DB.Token
+                     , Image
+                     , Mail
+                     , MailTask
+                     , Mailgun
+                     , Models
+                     , Post
+                     , RandomStrings
+                     , Settings
+                     , Templates.Mail
+                     , Templates.Pages
+                     , Templates.Util
+                     , Time
+                     , Util
   
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    

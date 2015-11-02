@@ -1,0 +1,9 @@
+flags: {}
+packages:
+- '.'
+extra-deps:
+- Crypto-4.2.5.1
+- dataenc-0.12
+- hS3-0.5.9
+- scotty-cookie-0.1.0.3
+resolver: lts-3.4

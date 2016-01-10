@@ -1,7 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module DB (DatabaseM, query, execute, runDB) where
+module DB (DatabaseM, query, query_, execute, runDB) where
 
 import qualified Database.PostgreSQL.Simple as PG
 import Control.Monad.Reader (ask, liftIO, ReaderT)
@@ -21,6 +21,11 @@ query :: (PG.ToRow q, PG.FromRow r) => PG.Query -> q -> DatabaseM [r]
 query q r = do
   conn <- ask
   liftIO $ PG.query conn q r
+
+query_ :: (PG.FromRow r) => PG.Query -> DatabaseM [r]
+query_ q = do
+  conn <- ask
+  liftIO $ PG.query_ conn q
 
 execute :: PG.ToRow q => PG.Query -> q -> DatabaseM Int64
 execute q r = do

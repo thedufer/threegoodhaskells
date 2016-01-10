@@ -25,6 +25,9 @@ type Url = String
 type AttachmentType = String
 data Attachment = Attachment AttachmentId Url AttachmentType PostId
 
+type AnnouncementId = Id
+data Announcement = Announcement AnnouncementId Bool String deriving (Show)
+
 memberToId :: Member -> MemberId
 memberToId (Member id _ _ _ _) = id
 
@@ -45,3 +48,6 @@ postToMemberId (Post _ _ _ _ id) = id
 
 postToMString :: Post -> Maybe String
 postToMString (Post _ mString _ _ _) = mString
+
+announcementToString :: Announcement -> String
+announcementToString (Announcement _ _ str) = str

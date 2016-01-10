@@ -12,6 +12,8 @@ import System.IO.Error (catchIOError)
 
 import Models
 import DB
+import qualified DB.Announcement
+import qualified DB.Member
 import qualified Templates.Mail as TM
 import qualified Auth
 import qualified Settings
@@ -70,6 +72,8 @@ sendFirstPostResponseMail member idPost postToken oldSubject = do
 sendOtherPostMail :: Member -> PostId -> PostToken -> String -> Maybe (String, String, [Attachment]) -> DatabaseM Bool
 sendOtherPostMail member idPost postToken day mPrevPostTuple = do
   mLoginCode <- Auth.makeLoginCode (memberToId member)
+  mAnnouncement <- DB.Announcement.getAnnouncementForMember member
+  DB.Member.setGotActiveAnnouncement member
   case mLoginCode of
     Nothing -> return False
     Just loginCode ->
@@ -77,7 +81,7 @@ sendOtherPostMail member idPost postToken day mPrevPostTuple = do
         (memberToEmail member)
         ("It's " ++ day ++ " - What are your 3 Good Things?")
         (Just $ addressToString $ makeFromEmail idPost postToken)
-        (TL.toStrict $ TM.otherPost (memberToId member) (loginCodeToCode loginCode) mPrevPostTuple)
+        (TL.toStrict $ TM.otherPost (memberToId member) (loginCodeToCode loginCode) mPrevPostTuple mAnnouncement)
 
 sendLoginMail :: Member -> DatabaseM Bool
 sendLoginMail member = do

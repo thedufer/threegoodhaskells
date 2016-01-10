@@ -37,8 +37,14 @@ firstPostResponse idMember code = renderText $ do
     "."
   footer idMember code
 
-otherPost :: MemberId -> Code -> Maybe (String, String, [Attachment]) -> TL.Text
-otherPost idMember code mPrevPostTuple = renderText $ do
+otherPost :: MemberId -> Code -> Maybe (String, String, [Attachment]) -> Maybe Announcement -> TL.Text
+otherPost idMember code mPrevPostTuple mAnnouncement = renderText $ do
+  case mAnnouncement of
+    Just str -> do
+      toHtmlRaw (announcementToString str)
+      br_ []
+      br_ []
+    Nothing -> ""
   p_ "Just reply to this email with your Three Good Things."
   case mPrevPostTuple of
     Just (sDate, text, as) -> do

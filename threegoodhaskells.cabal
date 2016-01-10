@@ -56,6 +56,7 @@ executable threegoodhaskells
   -- Modules included in this executable, other than Main.
   other-modules:       Auth
                      , DB
+                     , DB.Announcement
                      , DB.Attachment
                      , DB.LoginCode
                      , DB.Member

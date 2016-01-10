@@ -1,4 +1,4 @@
-module DB.Member (newMember, idToMMember, membersNeedEmail, bumpNextEmailDate, emailToMMember, setUnsubscribed, setSendTime) where
+module DB.Member (newMember, idToMMember, membersNeedEmail, bumpNextEmailDate, emailToMMember, setUnsubscribed, setSendTime, setGotActiveAnnouncement) where
 
 import Models
 import DB
@@ -58,3 +58,7 @@ setSendTime :: MemberId -> SendTime -> DatabaseM ()
 setSendTime idMember sendTime = do
   nextEmailDate <- liftIO $ sendTimeToNextEmailDate sendTime
   void $ execute "UPDATE \"Members\" SET \"nextEmailDate\" = ?, \"sendTime\" = ? WHERE id = ?;" (nextEmailDate, sendTime, idMember)
+
+setGotActiveAnnouncement :: Member -> DatabaseM ()
+setGotActiveAnnouncement (Member idMember _ _ _ _) =
+  void $ execute "UPDATE \"Members\" SET \"gotActiveAnnouncement\" = true WHERE id = ?;" (Only idMember)
